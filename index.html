@@ -2361,7 +2361,7 @@ const KB = [
   { k:["groove","grooving"], a:"Grooving plunges a narrow tool straight in (X) to the groove diameter — cycle <code>G75</code>." },
   { k:["keyslot","key slot","slot","milling","mill"], a:"A keyslot needs the live tool + C-axis (<code>M13</code>): stop the main spindle, index <code>C0</code>, plunge in X, then feed along Z." }
 ];
-const CHAT_QUICK = ["Hint for this level","What is G96?","G02 vs G03","What are I and K?","How do I face?","What's my tolerance?"];
+const CHAT_QUICK = ["Hint for this level","What is G96?","Speeds & feeds for steel?","Which insert for aluminium?","How do I stop chatter?","What's my tolerance?"];
 let chatSeeded=false;
 
 function normQ(s){ return " "+s.toLowerCase().replace(/[^a-z0-9]+/g," ").trim().replace(/\s+/g," ")+" "; }
@@ -2409,12 +2409,13 @@ function coachSystemPrompt(){
   if(LV.target.bore) feats.push("an internal bore");
   if(LV.target.threads) feats.push(LV.target.threads.map(t=>`a ${t.side} thread`).join(" and "));
   if(LV.target.slots) feats.push("a milled keyslot");
-  return `You are a friendly, concise FANUC 0i-TF CNC lathe programming tutor inside a G-code learning game. `+
-    `Teach turning G-code (G00/G01/G02/G03 arcs, G28, G50, G96/G97, G70/G71/G72/G74/G75/G76 cycles, M03/M05/M08/M30). `+
-    `Remember: on a lathe X is a DIAMETER, Z is axial (Z0 = faced end, negative into the part), U/W are incremental. `+
-    `The student is on Level ${LV.id}: "${LV.title}" — making it from Ø${LV.stock.diameter}×${LV.stock.length} mm ${LV.stock.material}`+
-    `${feats.length?" with "+feats.join(" and "):""}, tolerance ±${LV.tolerance} mm. `+
-    `Answer in 1-4 short sentences (or a short list). Use G-code examples in backticks. Give hints, not always the full program. Plain, encouraging language.`;
+  return `You are a friendly, knowledgeable lathe and machining expert helping a student inside a CNC turning / G-code learning game. `+
+    `Answer ANY question about lathes and machining — turning, facing, boring, drilling, grooving and threading operations; tooling and insert selection; work holding (chucks, collets, centres, steady rests); speeds and feeds; materials and machinability; coolant; thread standards (metric, UNF, NPT); measuring and tolerances; surface finish; workshop safety; machine setup and maintenance; and troubleshooting (chatter, poor finish, tool wear, built-up edge). `+
+    `You also know FANUC turning G-code (G00/G01/G02/G03 arcs, G28, G50, G96/G97, G70/G71/G72/G74/G75/G76 cycles, M03/M05/M08/M30). `+
+    `On a lathe X is a DIAMETER, Z is axial (Z0 = faced end, negative into the part), U/W are incremental. `+
+    `Context: the student is on Level ${LV.id} "${LV.title}", made from Ø${LV.stock.diameter}×${LV.stock.length} mm ${LV.stock.material}`+
+    `${feats.length?" with "+feats.join(" and "):""}, tolerance ±${LV.tolerance} mm — relate answers to this when it helps, but freely answer general lathe questions too. `+
+    `Keep answers concise (a few sentences or a short list). Use code or examples in backticks where useful. Encouraging, plain language. Only if a question is clearly nothing to do with lathes, machining or workshops, gently steer back.`;
 }
 async function chatAsk(q){
   q=(q||"").trim(); if(!q) return;
@@ -2437,7 +2438,7 @@ async function chatAsk(q){
 }
 function seedChat(){
   if(chatSeeded) return; chatSeeded=true;
-  chatAppend("Hi! I'm your G-code coach — ask me <b>anything</b> about lathe programming or this part. Try <i>how do I cut a taper?</i>, <i>what are I and K?</i>, or tap a chip below.<span class='muted'>The AI coach is free — the first question may pop a quick one-time sign-in. No internet? You still get built-in help.</span>", "bot");
+  chatAppend("Hi! I'm your lathe coach — ask me <b>anything</b> about lathes and machining: G-code, tooling, speeds &amp; feeds, work holding, threading, finishes, or this part. Try <i>how do I cut a taper?</i> or <i>what insert for stainless?</i>, or tap a chip below.<span class='muted'>The AI coach is free — the first question may pop a quick one-time sign-in. No internet? You still get built-in help.</span>", "bot");
   const qz=document.getElementById("chatquick");
   CHAT_QUICK.forEach(t=>{ const c=document.createElement("button"); c.className="chip"; c.textContent=t;
     c.addEventListener("click", ()=>{ chatAsk(t); }); qz.appendChild(c); });
