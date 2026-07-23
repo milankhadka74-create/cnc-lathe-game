@@ -225,6 +225,42 @@
     .app{grid-template-columns:1fr;grid-template-areas:"sim" "draw" "trans" "bottom"}
     #bottom-zone{grid-template-columns:1fr}
   }
+  /* ---------- TEACH ME ---------- */
+  .teachbtn{font-family:var(--disp);text-transform:uppercase;letter-spacing:.08em;font-weight:600;font-size:12px;
+    color:#10202a;background:var(--amber);border:0;border-radius:6px;padding:8px 14px;margin-right:12px;cursor:pointer}
+  .teachbtn:hover{background:#d98a2a}
+  .teach{background:var(--card);border-radius:9px;width:min(1000px,96vw);max-height:92vh;display:flex;flex-direction:column;
+    overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.4);border:1px solid var(--line)}
+  .teach-head{background:var(--ink);color:#fff;padding:16px 20px;display:flex;align-items:center;gap:12px}
+  .teach-title{font-family:var(--disp);text-transform:uppercase;letter-spacing:.06em;font-weight:700;font-size:20px;line-height:1}
+  .teach-sub{font-size:12px;opacity:.8;margin-top:4px}
+  .teach-body{display:flex;min-height:0;flex:1}
+  .teach-nav{width:210px;flex-shrink:0;background:#f1f5f6;border-right:1px solid var(--line);overflow-y:auto;padding:8px}
+  .teach-nav button{display:block;width:100%;text-align:left;background:transparent;border:0;border-radius:6px;
+    padding:9px 11px;font-family:var(--body);font-size:13px;color:#2b3f48;cursor:pointer;line-height:1.3}
+  .teach-nav button:hover{background:#e2ebee}
+  .teach-nav button.active{background:var(--steel);color:#fff;font-weight:600}
+  .teach-content{flex:1;overflow-y:auto;padding:22px 26px;color:#1c2b31;font-size:14px;line-height:1.62}
+  .teach-content h2{font-family:var(--disp);text-transform:uppercase;letter-spacing:.04em;font-size:20px;
+    color:var(--steel-d);margin:0 0 4px}
+  .teach-content h3{font-family:var(--disp);text-transform:uppercase;letter-spacing:.06em;font-size:12.5px;
+    color:var(--amber);margin:20px 0 6px}
+  .teach-content p{margin:0 0 10px}
+  .teach-content ul{margin:6px 0 12px;padding-left:20px} .teach-content li{margin:3px 0}
+  .teach-content code{font-family:var(--mono);font-size:12.5px;background:rgba(10,40,55,.08);padding:1px 5px;border-radius:3px}
+  .teach-content .formula{font-family:var(--mono);background:#0d1519;color:#8fe3b0;padding:10px 14px;border-radius:6px;
+    margin:8px 0;font-size:13px;overflow-x:auto;white-space:pre}
+  .teach-content .keybox{background:#eef6f2;border-left:4px solid var(--feed);border-radius:5px;padding:10px 14px;margin:12px 0}
+  .teach-content .keybox b{color:var(--feed)}
+  .teach-content svg{max-width:100%;height:auto;display:block;margin:10px 0 4px;background:#fbfdfd;border:1px solid var(--line);border-radius:6px}
+  .teach-content .cap{font-size:11.5px;color:#6f8a95;font-style:italic;margin:-2px 0 14px}
+  .teach-content .isochip{display:inline-block;color:#fff;font-weight:700;font-family:var(--mono);
+    width:22px;height:22px;line-height:22px;text-align:center;border-radius:4px;margin-right:6px}
+  @media(max-width:640px){
+    .teach-body{flex-direction:column}
+    .teach-nav{width:auto;display:flex;gap:6px;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line)}
+    .teach-nav button{white-space:nowrap;width:auto}
+  }
 </style>
 <!-- Free browser AI (no API key). If offline / blocked, the chat falls back to the built-in coach. -->
 <script src="https://js.puter.com/v2/"></script>
@@ -237,6 +273,7 @@
     <h1>CNC Lathe — Programming Game</h1>
   </div>
   <div class="spacer"></div>
+  <button class="teachbtn" id="btn-teach" title="Learn metal-cutting theory">📚 Teach Me</button>
   <div class="lvlsel">
     <button class="lvlbtn" id="lvl-prev" title="Previous level">◀</button>
     <div class="lvl" id="lvl-chip">Level <b id="lvl-num">1</b> · <span id="lvl-title">—</span></div>
@@ -383,6 +420,21 @@
       <button class="close" id="close-result">Close</button>
     </div>
     <div class="rbody" id="rbody"></div>
+  </div>
+</div>
+
+<!-- TEACH ME MODAL -->
+<div class="overlay" id="teach-overlay">
+  <div class="teach">
+    <div class="teach-head">
+      <div><div class="teach-title">📚 Metal-Cutting Theory</div>
+        <div class="teach-sub">Core turning knowledge — written for this game. Concepts, not copied pages.</div></div>
+      <button class="close" id="close-teach">Close</button>
+    </div>
+    <div class="teach-body">
+      <nav class="teach-nav" id="teach-nav"></nav>
+      <div class="teach-content" id="teach-content"></div>
+    </div>
   </div>
 </div>
 
@@ -2295,6 +2347,220 @@ function loadLevel(idx){
 }
 document.getElementById("lvl-prev").addEventListener("click", ()=>loadLevel(curLevel-1));
 document.getElementById("lvl-next").addEventListener("click", ()=>loadLevel(curLevel+1));
+
+/* ============================================================
+   12. TEACH ME  (original metal-cutting theory + own diagrams)
+   Covers the same curriculum as the Sandvik training handbook,
+   written from scratch for this game — no copied text or images.
+   ============================================================ */
+const LESSONS = [
+{ id:"turn", title:"1 · What is turning?", html:`
+  <h2>What is turning?</h2>
+  <p>Turning shapes round parts with a <b>single-point tool</b>. The workpiece <b>rotates</b> in the chuck while the tool feeds against it, peeling off a layer of metal. Because the part spins, everything you make is symmetric around the centre line — cylinders, tapers, grooves, threads.</p>
+  <svg viewBox="0 0 440 190" role="img" aria-label="Turning: workpiece rotates, tool feeds">
+    <rect x="34" y="66" width="52" height="58" rx="3" fill="#2c4550"/>
+    <text x="60" y="99" fill="#dfe8ec" font-size="9" text-anchor="middle" font-family="monospace">CHUCK</text>
+    <rect x="86" y="78" width="250" height="34" fill="#dfe6ea" stroke="#8a9aa2"/>
+    <path d="M356 95 a24 24 0 1 1 -7 -16" fill="none" stroke="#12667f" stroke-width="2.5"/>
+    <path d="M347 81 l2 -10 l8 6 z" fill="#12667f"/>
+    <text x="372" y="98" fill="#12667f" font-size="11" font-family="monospace">rotate</text>
+    <path d="M232 150 l12 20 l-24 0 z" fill="#c9995a" stroke="#8a6a34"/>
+    <rect x="236" y="120" width="8" height="34" fill="#9fb0b8" stroke="#6d7f88"/>
+    <line x1="250" y1="128" x2="150" y2="128" stroke="#1c8256" stroke-width="2.5"/>
+    <path d="M150 128 l11 -5 l0 10 z" fill="#1c8256"/>
+    <text x="168" y="122" fill="#1c8256" font-size="11" font-family="monospace">feed</text>
+  </svg>
+  <p class="cap">The part spins; the tool feeds along it. That combination cuts the shape.</p>
+  <h3>The three basic operations</h3>
+  <ul>
+    <li><b>Longitudinal (OD) turning</b> — tool feeds along the axis (Z), reducing the diameter.</li>
+    <li><b>Facing</b> — tool feeds across the end (X), flattening and setting the length/face.</li>
+    <li><b>Profiling</b> — X and Z move together, cutting tapers and curves.</li>
+  </ul>
+  <div class="keybox"><b>Remember:</b> on a lathe <code>X</code> is a <b>diameter</b> and <code>Z</code> runs along the axis (Z0 = the finished face). That's why cutting to <code>X40</code> makes a Ø40 part.</div>`},
+
+{ id:"data", title:"2 · Speeds, feeds & depth", html:`
+  <h2>The three cutting data</h2>
+  <p>Every turning cut is defined by three numbers. Get them right and the tool cuts cleanly and lasts; get them wrong and you burn edges or leave a rough finish.</p>
+  <svg viewBox="0 0 440 180" role="img" aria-label="Cutting speed, feed and depth of cut">
+    <line x1="40" y1="150" x2="410" y2="150" stroke="#aab4ba" stroke-dasharray="6 4"/>
+    <rect x="60" y="96" width="300" height="54" fill="#dfe6ea" stroke="#8a9aa2"/>
+    <rect x="60" y="80" width="300" height="16" fill="#eef3f5" stroke="#8a9aa2"/>
+    <line x1="372" y1="80" x2="372" y2="96" stroke="#cf4237" stroke-width="2"/>
+    <text x="386" y="92" fill="#cf4237" font-size="11" font-family="monospace">ap</text>
+    <path d="M120 88 l60 0" stroke="#1c8256" stroke-width="2"/><path d="M180 88 l-9 -4 l0 8 z" fill="#1c8256"/>
+    <text x="128" y="76" fill="#1c8256" font-size="11" font-family="monospace">fn (per rev)</text>
+    <path d="M300 123 a18 18 0 1 1 -5 -12" fill="none" stroke="#12667f" stroke-width="2.2"/>
+    <text x="250" y="128" fill="#12667f" font-size="11" font-family="monospace">vc (surface speed)</text>
+  </svg>
+  <h3>Cutting speed — v<sub>c</sub> (m/min)</h3>
+  <p>How fast the surface passes the edge. It's set by the material and the tool grade. The machine needs it as spindle rpm, so you convert:</p>
+  <div class="formula">n (rpm) = vc × 1000 / (π × Dm)      vc = π × Dm × n / 1000</div>
+  <p>Dm is the diameter being cut (mm). With <code>G96</code> the control does this for you and holds v<sub>c</sub> constant as the diameter changes.</p>
+  <h3>Feed — f<sub>n</sub> (mm/rev)</h3>
+  <p>How far the tool advances each revolution. Bigger feed = faster metal removal and shorter cycle time, but a rougher finish and higher forces.</p>
+  <h3>Depth of cut — a<sub>p</sub> (mm)</h3>
+  <p>The thickness of the layer removed, measured on the <b>radius</b>. So the diameter drops by <b>2 × a<sub>p</sub></b> in one pass.</p>
+  <div class="keybox"><b>Metal removal rate</b> tells you how fast you're cutting:<div class="formula">Q (cm³/min) = vc × ap × fn</div>Roughing pushes all three up; finishing uses a light a<sub>p</sub> and small f<sub>n</sub> for accuracy and finish.</div>`},
+
+{ id:"angle", title:"3 · Angle & nose radius", html:`
+  <h2>Entering angle &amp; nose radius</h2>
+  <p>The <b>shape</b> and <b>orientation</b> of the cutting corner change how the cut behaves — the forces, the chip, and how close you can turn to a shoulder.</p>
+  <svg viewBox="0 0 440 180" role="img" aria-label="Entering angle and nose radius">
+    <rect x="70" y="40" width="150" height="100" fill="#dfe6ea" stroke="#8a9aa2"/>
+    <text x="120" y="30" fill="#6f8a95" font-size="10" font-family="monospace">workpiece</text>
+    <path d="M300 60 l-70 40 a14 14 0 0 0 -6 12 l0 20 l90 0 z" fill="#c9995a" stroke="#8a6a34" stroke-width="1.5"/>
+    <line x1="230" y1="100" x2="300" y2="60" stroke="#0d1519" stroke-width="1"/>
+    <line x1="230" y1="100" x2="230" y2="150" stroke="#12667f" stroke-dasharray="4 3"/>
+    <path d="M243 118 a20 20 0 0 0 4 -16" fill="none" stroke="#cf4237" stroke-width="2"/>
+    <text x="250" y="128" fill="#cf4237" font-size="12" font-family="monospace">κr</text>
+    <circle cx="228" cy="112" r="13" fill="none" stroke="#1c8256" stroke-width="2"/>
+    <text x="150" y="150" fill="#1c8256" font-size="11" font-family="monospace">nose radius rε</text>
+  </svg>
+  <p class="cap">κr = entering angle (edge vs. feed direction). rε = the rounding at the tip.</p>
+  <h3>Entering angle κ<sub>r</sub></h3>
+  <ul>
+    <li><b>90° (or 95°)</b> — pushes almost straight back, so very little force bends the part sideways. Needed to turn square up to a <b>shoulder</b>.</li>
+    <li><b>45°–75°</b> — spreads the cut over a longer edge (thinner chip, longer tool life) and points more force into the chuck. Great for plain OD turning, but can't make a square shoulder.</li>
+  </ul>
+  <h3>Nose radius r<sub>ε</sub></h3>
+  <ul>
+    <li><b>Large r<sub>ε</sub></b> — strong edge, allows heavier feeds, but pushes the part sideways more (watch for vibration on thin parts).</li>
+    <li><b>Small r<sub>ε</sub></b> — gentle radial force, good for slender/flexible parts, but a weaker tip.</li>
+  </ul>
+  <div class="keybox"><b>Rule of thumb:</b> keep depth of cut ≥ the nose radius where you can — cutting shallower than r<sub>ε</sub> makes forces point radially and invites chatter.</div>`},
+
+{ id:"finish", title:"4 · Surface finish", html:`
+  <h2>Surface finish</h2>
+  <p>A turned surface is really a fine spiral groove left by the tool tip. How deep those grooves are depends on just two things: the <b>feed</b> and the <b>nose radius</b>.</p>
+  <svg viewBox="0 0 440 170" role="img" aria-label="Feed marks and finish">
+    <text x="70" y="30" fill="#6f8a95" font-size="11" font-family="monospace">big feed → rough</text>
+    <path d="M40 70 q15 -22 30 0 q15 -22 30 0 q15 -22 30 0 q15 -22 30 0 q15 -22 30 0" fill="none" stroke="#cf4237" stroke-width="2"/>
+    <text x="270" y="30" fill="#6f8a95" font-size="11" font-family="monospace">small feed → smooth</text>
+    <path d="M250 70 q7 -9 14 0 q7 -9 14 0 q7 -9 14 0 q7 -9 14 0 q7 -9 14 0 q7 -9 14 0 q7 -9 14 0 q7 -9 14 0 q7 -9 14 0" fill="none" stroke="#1c8256" stroke-width="2"/>
+  </svg>
+  <p>The theoretical roughness (peak-to-valley) is:</p>
+  <div class="formula">Rz ≈ fn² / (8 × rε)     (fn and rε in mm)</div>
+  <p>So <b>halving the feed cuts the roughness to a quarter</b>, and a <b>bigger nose radius</b> smooths it further. That's the finishing trade-off: light feed + generous radius for a mirror, heavier feed for speed when finish doesn't matter.</p>
+  <div class="keybox"><b>Wiper inserts</b> have a specially blended nose that keeps the finish smooth even at double the feed — a common way to save cycle time without losing surface quality.</div>`},
+
+{ id:"insert", title:"5 · Inserts & the ISO code", html:`
+  <h2>Inserts &amp; the ISO code</h2>
+  <p>Modern turning uses replaceable carbide <b>inserts</b> clamped in a holder. When an edge wears you index to a fresh corner instead of regrinding. The insert's <b>shape</b> is the first big choice:</p>
+  <svg viewBox="0 0 440 130" role="img" aria-label="Common insert shapes">
+    <g fill="#eef3f5" stroke="#3c4d56" stroke-width="1.5" font-family="monospace">
+      <polygon points="40,90 90,90 65,46"/><text x="65" y="112" fill="#2b3f48" font-size="11" text-anchor="middle">T 60°</text>
+      <rect x="120" y="50" width="44" height="44"/><text x="142" y="112" fill="#2b3f48" font-size="11" text-anchor="middle">S 90°</text>
+      <polygon points="205,50 245,58 235,96 195,88"/><text x="220" y="112" fill="#2b3f48" font-size="11" text-anchor="middle">C 80°</text>
+      <polygon points="285,52 320,54 300,98"/><text x="300" y="112" fill="#2b3f48" font-size="11" text-anchor="middle">D 55°</text>
+      <circle cx="382" cy="72" r="24"/><text x="382" y="112" fill="#2b3f48" font-size="11" text-anchor="middle">R round</text>
+    </g>
+  </svg>
+  <p class="cap">Bigger corner angle = stronger edge but more cutting contact. Smaller = more accessible for profiling.</p>
+  <h3>Reading the code (e.g. <code>CNMG 12 04 08</code>)</h3>
+  <ul>
+    <li><b>C</b> — shape (80° rhombic here)</li>
+    <li><b>N</b> — clearance angle (N = 0°, negative insert; positive shapes use letters like C/P)</li>
+    <li><b>M</b> — tolerance class</li>
+    <li><b>G</b> — type/fixing &amp; chipbreaker</li>
+    <li><b>12</b> — cutting-edge length · <b>04</b> — thickness · <b>08</b> — nose radius (0.8 mm)</li>
+  </ul>
+  <h3>Positive vs negative</h3>
+  <p><b>Negative</b> inserts are double-sided (more edges, tough, need more power) — good for heavy OD work. <b>Positive</b> inserts are single-sided with a keener edge and lower forces — better for internal work and slender parts.</p>
+  <div class="keybox"><b>Grade + geometry:</b> the carbide <b>grade</b> (with its coating) sets wear resistance and toughness; the <b>chipbreaker geometry</b> pressed into the face curls and snaps the chip. You pick both to suit the material and whether you're roughing or finishing.</div>`},
+
+{ id:"iso", title:"6 · Material groups (ISO)", html:`
+  <h2>The six material groups</h2>
+  <p>Every workpiece metal falls into one of six ISO groups, each with a colour and a letter. The group tells you how the material cuts and which insert grade to reach for.</p>
+  <div style="margin:10px 0 14px">
+    <p><span class="isochip" style="background:#2b6cb0">P</span><b>Steel</b> — the biggest group. Long-chipping, generally easy to cut. Watch for wear at higher speeds.</p>
+    <p><span class="isochip" style="background:#d6a417">M</span><b>Stainless steel</b> — gummy and work-hardening; builds heat and edge, needs sharp, tough grades and firm feed.</p>
+    <p><span class="isochip" style="background:#cf4237">K</span><b>Cast iron</b> — short, crumbly chips and abrasive; hard on edges but low cutting forces.</p>
+    <p><span class="isochip" style="background:#2f9e5b">N</span><b>Non-ferrous</b> — aluminium, brass, copper. Soft, high speeds, sharp polished edges; silicon-Al is abrasive.</p>
+    <p><span class="isochip" style="background:#c8792a">S</span><b>Superalloys &amp; titanium</b> — heat-resistant, sticky, abrasive; low speeds, lots of coolant, rigid setup.</p>
+    <p><span class="isochip" style="background:#7d8b92">H</span><b>Hardened steel</b> — 45–65 HRC. Cut with CBN/ceramic at light depths; effectively "hard turning" instead of grinding.</p>
+  </div>
+  <div class="keybox"><b>Why it matters:</b> the same speed that's perfect in aluminium would instantly burn an edge in titanium. Always pick cutting data <b>per material group</b> — that colour code is on nearly every insert box for a reason.</div>`},
+
+{ id:"chip", title:"7 · Chip control", html:`
+  <h2>Chip control</h2>
+  <p>A good chip is <b>short and curled</b> — it clears the cut, doesn't scratch the finish, and is safe to handle. Long, stringy "bird's-nest" chips wrap around the tool and part: they're dangerous and ruin the surface.</p>
+  <svg viewBox="0 0 440 140" role="img" aria-label="Good vs bad chips">
+    <text x="90" y="26" fill="#1c8256" font-size="11" font-family="monospace">GOOD — short, broken</text>
+    <path d="M40 70 c14 -18 28 6 10 14 M78 66 c14 -18 28 6 10 14 M116 72 c14 -18 28 6 10 14" fill="none" stroke="#1c8256" stroke-width="2.5"/>
+    <text x="300" y="26" fill="#cf4237" font-size="11" font-family="monospace">BAD — long, tangled</text>
+    <path d="M250 90 c30 -50 70 30 100 -10 c30 -30 -10 40 30 30 c30 -8 -20 -40 10 -50" fill="none" stroke="#cf4237" stroke-width="2"/>
+  </svg>
+  <h3>How chips break</h3>
+  <ul>
+    <li><b>Self-breaking</b> — the chipbreaker curls the chip so it snaps on its own. The ideal.</li>
+    <li><b>Against the tool</b> — the chip curls back into the holder and snaps. Works, but can hammer the edge.</li>
+    <li><b>Against the workpiece</b> — the chip hits the part and breaks. Usually avoided on finished surfaces.</li>
+  </ul>
+  <div class="keybox"><b>Tuning it:</b> if chips are too long, raise the <b>feed</b> or depth, or pick a tighter chipbreaker. Each insert geometry has a "chip-breaking window" of feed and depth where chips come off nicely — stay inside it.</div>`},
+
+{ id:"wear", title:"8 · Tool wear & fixes", html:`
+  <h2>Tool wear — read it and fix it</h2>
+  <p>A worn edge tells a story. Learn the patterns and you can dial the process in instead of guessing. Some flank wear is <b>normal and wanted</b> (predictable life); the others are warning signs.</p>
+  <svg viewBox="0 0 440 150" role="img" aria-label="Wear zones on an insert corner">
+    <polygon points="120,30 320,30 320,120 120,120" fill="#eef3f5" stroke="#3c4d56"/>
+    <rect x="120" y="112" width="200" height="8" fill="#cf4237"/><text x="330" y="120" fill="#cf4237" font-size="10" font-family="monospace">flank</text>
+    <ellipse cx="220" cy="55" rx="55" ry="14" fill="#c8792a" opacity=".7"/><text x="196" y="59" fill="#3a2a10" font-size="10" font-family="monospace">crater</text>
+    <rect x="300" y="104" width="20" height="18" fill="#2b6cb0" opacity=".7"/><text x="326" y="100" fill="#2b6cb0" font-size="10" font-family="monospace">notch</text>
+  </svg>
+  <h3>Common types → likely cause → fix</h3>
+  <ul>
+    <li><b>Flank wear</b> (edge rubs away) — abrasion. If too fast: lower v<sub>c</sub> or use a more wear-resistant grade.</li>
+    <li><b>Crater wear</b> (dish on the top face) — heat/diffusion at high speed. Use a coated grade or drop v<sub>c</sub>.</li>
+    <li><b>Built-up edge</b> (metal welds to the tip) — too <b>slow</b> or sticky material. <b>Raise</b> v<sub>c</sub>, sharper/positive geometry, coolant.</li>
+    <li><b>Notch wear</b> (damage at the depth-of-cut line) — work hardening/oxidation. Vary the depth, use a tougher grade.</li>
+    <li><b>Plastic deformation</b> (edge bulges/collapses) — too hot &amp; loaded. Harder grade, more coolant, less v<sub>c</sub>/f<sub>n</sub>.</li>
+    <li><b>Thermal cracks</b> (little combs across the edge) — heating/cooling cycling in interrupted cuts. Tougher grade; be consistent with coolant.</li>
+    <li><b>Chipping / fracture</b> — mechanical or thermal shock, weak edge. Tougher grade, stronger edge prep, check rigidity.</li>
+  </ul>
+  <div class="keybox"><b>Chatter (vibration)?</b> It's usually rigidity, not the cutting data: shorten the tool overhang, support long parts, use a smaller nose radius / sharper edge, and keep depth of cut above the nose radius.</div>`},
+
+{ id:"ops", title:"9 · Parting, grooving, threading", html:`
+  <h2>Parting, grooving &amp; threading</h2>
+  <h3>Parting off</h3>
+  <p>A narrow blade plunges to the centre to cut the part free. It's a demanding cut — the blade is thin and buried. Keep the setup <b>rigid</b>, the tool exactly on centre height, and (under <code>G96</code>) let the speed drop near the middle so it doesn't overspeed at small diameters.</p>
+  <h3>Grooving</h3>
+  <p>A shaped tool plunges radially (X) to form a groove — for circlips, seals or reliefs. Wide grooves are made with several overlapping plunges, or by plunging then turning sideways to the width. The tool width sets the groove width.</p>
+  <svg viewBox="0 0 440 130" role="img" aria-label="A groove in a shaft">
+    <rect x="60" y="55" width="320" height="40" fill="#dfe6ea" stroke="#8a9aa2"/>
+    <rect x="205" y="55" width="30" height="26" fill="#0d1519"/>
+    <line x1="220" y1="120" x2="220" y2="86" stroke="#c9995a" stroke-width="7"/>
+    <path d="M220 86 l6 10 l-12 0 z" fill="#c9995a"/>
+    <text x="250" y="112" fill="#6f8a95" font-size="10" font-family="monospace">plunge in X</text>
+  </svg>
+  <h3>Threading</h3>
+  <p>A threading insert traces the thread form in <b>many light passes</b> — you can't cut a full thread in one go. The pitch (the <code>F</code> word in <code>G76</code>) locks the tool feed to the spindle so the helix is exact. Key ideas:</p>
+  <ul>
+    <li><b>Infeed method</b> — feeding straight in (radial) is simple but loads both flanks; <b>flank infeed</b> (angled) cuts on one side and clears chips better on coarse threads.</li>
+    <li><b>Passes</b> — many decreasing cuts, not equal ones, so each removes a similar chip area.</li>
+    <li><b>Insert type</b> — full-profile inserts cut the crest too (exact form, one pitch each); V-profile inserts are cheaper and cover a pitch range.</li>
+  </ul>
+  <div class="keybox"><b>In this game:</b> Levels 8–9 use <code>G76</code> for outside and inside threads — turn the major diameter first, then let the cycle sink the form.</div>`}
+];
+let teachInited=false, teachCur=0;
+function renderTeachNav(){
+  const nav=document.getElementById("teach-nav"); nav.innerHTML="";
+  LESSONS.forEach((L,i)=>{ const b=document.createElement("button"); b.textContent=L.title;
+    b.className=(i===teachCur?"active":""); b.addEventListener("click",()=>showLesson(i)); nav.appendChild(b); });
+}
+function showLesson(i){
+  teachCur=i;
+  document.getElementById("teach-content").innerHTML=LESSONS[i].html;
+  document.getElementById("teach-content").scrollTop=0;
+  [...document.getElementById("teach-nav").children].forEach((b,k)=>b.classList.toggle("active",k===i));
+}
+function openTeach(){
+  if(!teachInited){ renderTeachNav(); showLesson(0); teachInited=true; }
+  document.getElementById("teach-overlay").classList.add("show");
+}
+document.getElementById("btn-teach").addEventListener("click", openTeach);
+document.getElementById("close-teach").addEventListener("click", ()=>document.getElementById("teach-overlay").classList.remove("show"));
+document.getElementById("teach-overlay").addEventListener("click", e=>{ if(e.target.id==="teach-overlay") document.getElementById("teach-overlay").classList.remove("show"); });
 
 /* ============================================================
    11. ASK-COACH  (offline, level-aware Q&A assistant)
