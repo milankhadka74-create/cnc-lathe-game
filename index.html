@@ -1,0 +1,2462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FANUC CNC Lathe — Level 1 · Programming Game</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#eef2f4; --paper2:#e4ebee;
+    --ink:#15232b; --ink2:#3c4d56; --mute:#6a7c85;
+    --steel:#12667f; --steel-d:#0d4d61;
+    --amber:#c47a1c; --rapid:#cf4237; --feed:#1c8256;
+    --line:#c9d5da; --line2:#b3c3ca;
+    --screen:#0d1519; --screen-hd:#16232a;
+    --grn:#8fe3ac; --grn-d:#5f8a72; --scr-mute:#6d8a95; --scr-amber:#e0b06a;
+    --card:#ffffff;
+    --disp:'Oswald','Arial Narrow',sans-serif;
+    --body:'Inter',system-ui,-apple-system,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,'SF Mono',Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:var(--paper); color:var(--ink); font-family:var(--body);
+    line-height:1.5; font-size:15px;
+    background-image:
+      linear-gradient(rgba(18,102,127,.045) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(18,102,127,.045) 1px,transparent 1px);
+    background-size:26px 26px;
+  }
+
+  /* ---------- HEADER ---------- */
+  header.bar{
+    background:var(--ink); color:#eef2f4; border-bottom:3px solid var(--amber);
+    padding:12px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+    position:relative; overflow:hidden;
+  }
+  header.bar::after{content:"";position:absolute;inset:0;
+    background-image:linear-gradient(rgba(255,255,255,.04) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(255,255,255,.04) 1px,transparent 1px);
+    background-size:26px 26px;pointer-events:none}
+  header .kick{font-family:var(--disp);text-transform:uppercase;letter-spacing:.3em;
+    font-weight:600;font-size:10.5px;color:var(--amber);position:relative}
+  header h1{font-family:var(--disp);font-weight:700;text-transform:uppercase;letter-spacing:.01em;
+    font-size:22px;margin:0;line-height:1;position:relative}
+  header .lvlsel{position:relative;display:flex;align-items:center;gap:6px}
+  header .lvl{font-family:var(--mono);font-size:11.5px;color:#b9c7ce;min-width:190px;text-align:center;
+    border:1px solid #38505b;padding:5px 10px;border-radius:2px;background:rgba(255,255,255,.02)}
+  header .lvl b{color:var(--grn);font-weight:500}
+  header .lvlbtn{font-family:var(--mono);font-size:12px;color:#cfe0e6;background:rgba(255,255,255,.04);
+    border:1px solid #38505b;border-radius:2px;width:26px;height:28px;cursor:pointer}
+  header .lvlbtn:hover{border-color:var(--amber);color:var(--amber)}
+  header .lvlbtn:disabled{opacity:.3;cursor:default}
+  header .spacer{flex:1}
+
+  /* ---------- LAYOUT ---------- */
+  .app{max-width:1500px;margin:0 auto;padding:16px;display:grid;gap:14px;
+    grid-template-columns:1.5fr 1fr;grid-template-areas:
+      "sim  draw"
+      "trans draw"
+      "bottom bottom";}
+  #sim-zone{grid-area:sim}
+  #draw-zone{grid-area:draw}
+  #trans-zone{grid-area:trans}
+  #bottom-zone{grid-area:bottom;display:grid;gap:14px;
+    grid-template-columns:210px 1fr 1.15fr}
+
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:7px;
+    box-shadow:0 1px 0 rgba(0,0,0,.03);overflow:hidden;display:flex;flex-direction:column}
+  .panel > .head{background:var(--ink);color:#dfe8ec;padding:7px 12px;display:flex;
+    align-items:center;gap:9px}
+  .panel > .head .t{font-family:var(--disp);text-transform:uppercase;letter-spacing:.14em;
+    font-size:11.5px;font-weight:500}
+  .panel > .head .dot{width:8px;height:8px;border-radius:50%;background:var(--grn-d)}
+  .panel > .head .rt{margin-left:auto;font-family:var(--mono);font-size:10px;color:#7f9aa6}
+  .panel > .body{padding:12px;flex:1;min-height:0}
+
+  /* ---------- SIM CANVAS ---------- */
+  #sim-zone .body{padding:0;position:relative;background:var(--screen)}
+  canvas#stage{display:block;width:100%;height:auto}
+  .dro{position:absolute;top:10px;left:10px;font-family:var(--mono);font-size:11.5px;
+    color:var(--grn);background:rgba(6,11,13,.72);border:1px solid #1d2e36;border-radius:4px;
+    padding:8px 11px;line-height:1.7;letter-spacing:.02em;pointer-events:none}
+  .dro b{color:var(--scr-amber);font-weight:500}
+  .dro .off{color:var(--scr-mute)}
+  .dro .on{color:var(--grn)}
+  .dro .hd{color:var(--scr-mute);text-transform:uppercase;letter-spacing:.16em;font-size:9px;
+    border-bottom:1px solid #1d2e36;padding-bottom:4px;margin-bottom:5px}
+  .dro .big{font-size:14px;letter-spacing:.06em}
+  .dro .sep{height:1px;background:#1d2e36;margin:5px 0}
+  .dro .rowlbl{color:var(--scr-mute)}
+  .legend{position:absolute;bottom:8px;right:10px;font-family:var(--mono);font-size:10px;
+    color:#7f9aa6;display:flex;gap:12px;pointer-events:none}
+  .legend i{display:inline-block;width:18px;height:0;vertical-align:middle;margin-right:5px}
+  .l-r{border-top:2px dashed var(--rapid)} .l-f{border-top:3px solid var(--feed)}
+  .l-t{border-top:2px dashed #7f9aa6}
+
+  /* ---------- TRANSPORT ---------- */
+  #trans-zone .body{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 12px}
+  button.tb{font-family:var(--disp);text-transform:uppercase;letter-spacing:.1em;font-weight:600;
+    font-size:12px;border:1px solid var(--line2);background:#f6f9fa;color:var(--ink2);
+    padding:8px 14px;border-radius:4px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+  button.tb:hover{border-color:var(--steel);color:var(--steel-d)}
+  button.tb.primary{background:var(--steel);border-color:var(--steel-d);color:#fff}
+  button.tb.primary:hover{background:var(--steel-d);color:#fff}
+  button.tb.go{background:var(--feed);border-color:#136443;color:#fff}
+  button.tb.go:hover{background:#136443}
+  button.tb svg{width:13px;height:13px}
+  .speed{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--mute)}
+  .speed input{accent-color:var(--steel)}
+
+  /* ---------- TECH DRAWING ---------- */
+  #draw-zone .body{background:#f5f8f9}
+  #draw-zone svg{width:100%;height:auto;display:block}
+  .bp-fill{fill:#e7eef1} .bp-line{stroke:var(--ink2);stroke-width:1.5;fill:none}
+  .bp-cl{stroke:var(--steel);stroke-width:.8;stroke-dasharray:9 3 2 3;fill:none}
+  .bp-dim{stroke:var(--steel);stroke-width:.9;fill:none}
+  .bp-ext{stroke:var(--line2);stroke-width:.8;fill:none}
+  .draw-note{font-family:var(--mono);font-size:11px;color:var(--mute);margin-top:6px}
+  text.dim{font-family:var(--mono);font-size:11px;fill:var(--steel-d)}
+  text.dimb{font-family:var(--mono);font-size:12px;fill:var(--ink);font-weight:700}
+
+  /* ---------- REFERENCE ---------- */
+  #ref-zone .body{padding:0;overflow:auto}
+  details.ref{border-bottom:1px solid var(--line)}
+  details.ref > summary{list-style:none;cursor:pointer;padding:9px 12px;
+    font-family:var(--disp);text-transform:uppercase;letter-spacing:.1em;font-size:11.5px;
+    font-weight:600;color:var(--steel-d);display:flex;align-items:center;gap:7px;background:#f6f9fa}
+  details.ref > summary::-webkit-details-marker{display:none}
+  details.ref > summary::before{content:"+";font-family:var(--mono);color:var(--amber);font-weight:700}
+  details.ref[open] > summary::before{content:"–"}
+  table.ref-tbl{width:100%;border-collapse:collapse;font-size:12px}
+  table.ref-tbl td{padding:5px 12px;border-top:1px solid var(--line);vertical-align:top;color:var(--ink2)}
+  table.ref-tbl td.g{font-family:var(--mono);font-weight:700;color:var(--steel-d);white-space:nowrap;width:66px}
+
+  /* ---------- NOTES ---------- */
+  #notes-zone .body{overflow:auto;font-size:13.5px}
+  /* tabs in the notes header */
+  .ntab{font-family:var(--disp);text-transform:uppercase;letter-spacing:.1em;font-size:11px;font-weight:600;
+    background:transparent;border:0;color:#93abb5;cursor:pointer;padding:5px 2px;border-bottom:2px solid transparent}
+  .ntab.active{color:#fff;border-bottom-color:var(--amber)}
+  .ntab:hover{color:#cfe0e6}
+  /* chat pane */
+  #chatpane{padding:0;display:flex;flex-direction:column;min-height:0}
+  .chat-log{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:9px}
+  .chat-msg{max-width:90%;padding:8px 11px;border-radius:11px;font-size:13px;line-height:1.5;
+    white-space:normal;word-wrap:break-word}
+  .chat-msg code,.chat-msg .i{font-family:var(--mono);font-size:12px;background:rgba(10,40,55,.09);
+    padding:1px 4px;border-radius:3px}
+  .chat-msg.bot{align-self:flex-start;background:#eef3f5;color:#1c2b31;border:1px solid #dbe6ea;border-bottom-left-radius:3px}
+  .chat-msg.bot b{color:#0d5a44}
+  .chat-msg.user{align-self:flex-end;background:var(--steel);color:#fff;border-bottom-right-radius:3px}
+  .chat-msg.user code,.chat-msg.user .i{background:rgba(255,255,255,.18)}
+  .chat-quick{display:flex;flex-wrap:wrap;gap:6px;padding:0 12px 8px}
+  .chip{font-size:11px;font-family:var(--mono);background:#eef3f5;border:1px solid #cdd9de;color:#3a5560;
+    border-radius:20px;padding:4px 10px;cursor:pointer;transition:background .12s}
+  .chip:hover{background:#e0ebef;border-color:#9fb6bf}
+  .chat-input{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line);background:#fafcfd}
+  .chat-input input{flex:1;border:1px solid #cdd9de;border-radius:6px;padding:8px 10px;font-size:13px;
+    font-family:var(--body);outline:none;color:#1c2b31}
+  .chat-input input:focus{border-color:var(--steel)}
+  .chat-input button{padding:8px 14px}
+  .chat-msg pre.chatcode{font-family:var(--mono);font-size:11.5px;background:#0d1519;color:#8fe3b0;
+    padding:8px 10px;border-radius:5px;margin:6px 0;white-space:pre;overflow-x:auto;line-height:1.55}
+  .chat-msg .muted{display:block;margin-top:5px;font-size:11px;color:#6f8a95;font-style:italic}
+  .typing{display:inline-flex;gap:4px;align-items:center;color:#5f7c88}
+  .typing i{width:5px;height:5px;border-radius:50%;background:#8aa3ad;display:inline-block;animation:tdot 1s infinite}
+  .typing i:nth-child(2){animation-delay:.15s} .typing i:nth-child(3){animation-delay:.3s}
+  @keyframes tdot{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+  .callout{border-radius:5px;padding:9px 12px;margin:0 0 9px;font-size:13px;border-left:4px solid}
+  .callout .t{font-family:var(--disp);text-transform:uppercase;letter-spacing:.12em;font-size:10px;
+    font-weight:600;display:block;margin-bottom:2px}
+  .c-note{background:#e9f2f5;border-color:var(--steel)} .c-note .t{color:var(--steel-d)}
+  .c-warn{background:#fbeee2;border-color:var(--rapid)} .c-warn .t{color:var(--rapid)}
+  .c-good{background:#eef6ef;border-color:var(--feed)} .c-good .t{color:var(--feed)}
+  .c-tip{background:#fbf4e6;border-color:var(--amber)} .c-tip .t{color:var(--amber)}
+  .run-now{font-family:var(--mono);font-size:12px;background:var(--screen);color:var(--grn);
+    padding:8px 11px;border-radius:4px;margin-bottom:10px;letter-spacing:.02em}
+  .run-now .lab{color:var(--scr-mute);text-transform:uppercase;letter-spacing:.14em;font-size:9.5px;display:block}
+  code.i{font-family:var(--mono);font-size:.9em;background:#dde7ea;color:var(--steel-d);
+    padding:1px 5px;border-radius:3px;white-space:nowrap}
+
+  /* ---------- EDITOR ---------- */
+  #code-zone .body{padding:0;display:flex;flex-direction:column;background:var(--screen)}
+  .editor{display:flex;flex:1;min-height:280px;font-family:var(--mono);font-size:13px;line-height:1.62}
+  .gutter{padding:12px 0;text-align:right;color:#3c525c;user-select:none;background:#0a1114;
+    border-right:1px solid #05090b;min-width:42px}
+  .gutter div{padding:0 10px 0 8px;white-space:nowrap}
+  .gutter div.active{color:var(--scr-amber);background:rgba(224,176,106,.12);font-weight:700}
+  textarea#code{flex:1;border:0;outline:0;resize:none;background:transparent;color:var(--grn);
+    font-family:inherit;font-size:inherit;line-height:inherit;padding:12px 14px;tab-size:2;
+    white-space:pre;overflow-wrap:normal;overflow-x:auto}
+  .ed-foot{display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--screen-hd);
+    border-top:1px solid #05090b}
+  .ed-foot .hint{font-family:var(--mono);font-size:10.5px;color:#7f9aa6}
+  .ed-foot #btn-submit{margin-left:auto}
+
+  /* ---------- RESULT MODAL ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(10,17,20,.6);display:none;
+    align-items:center;justify-content:center;padding:20px;z-index:50}
+  .overlay.show{display:flex}
+  /* Solution opens to the LEFT so the code editor on the right stays visible */
+  .overlay.left{justify-content:flex-start;background:rgba(10,17,20,.35)}
+  .result{background:var(--card);border-radius:9px;max-width:560px;width:100%;
+    max-height:88vh;overflow:auto;box-shadow:0 18px 50px rgba(0,0,0,.35);border:1px solid var(--line)}
+  .result .rhead{padding:18px 22px;color:#fff;display:flex;align-items:center;gap:12px}
+  .result .rhead.pass{background:var(--feed)} .result .rhead.fail{background:var(--rapid)}
+  .result .rhead .verdict{font-family:var(--disp);text-transform:uppercase;letter-spacing:.04em;
+    font-weight:700;font-size:26px;line-height:1}
+  .result .rhead .sub{font-size:13px;opacity:.92;margin-top:3px}
+  .result .rbody{padding:18px 22px}
+  .result h4{font-family:var(--disp);text-transform:uppercase;letter-spacing:.14em;font-size:11.5px;
+    color:var(--steel-d);margin:16px 0 8px}
+  .result h4:first-child{margin-top:0}
+  .result .close{margin-left:auto;background:rgba(255,255,255,.15);border:0;color:#fff;
+    font-family:var(--disp);text-transform:uppercase;letter-spacing:.1em;font-size:11px;font-weight:600;
+    padding:7px 12px;border-radius:4px;cursor:pointer}
+  .modelcode{font-family:var(--mono);font-size:12px;background:var(--screen);color:var(--grn);
+    padding:12px 14px;border-radius:5px;white-space:pre;overflow-x:auto;line-height:1.6;margin-top:6px}
+
+  @media(max-width:1050px){
+    .app{grid-template-columns:1fr;grid-template-areas:"sim" "draw" "trans" "bottom"}
+    #bottom-zone{grid-template-columns:1fr}
+  }
+</style>
+<!-- Free browser AI (no API key). If offline / blocked, the chat falls back to the built-in coach. -->
+<script src="https://js.puter.com/v2/"></script>
+</head>
+<body>
+
+<header class="bar">
+  <div>
+    <div class="kick">FANUC · 0i-TF · Manual Turning</div>
+    <h1>CNC Lathe — Programming Game</h1>
+  </div>
+  <div class="spacer"></div>
+  <div class="lvlsel">
+    <button class="lvlbtn" id="lvl-prev" title="Previous level">◀</button>
+    <div class="lvl" id="lvl-chip">Level <b id="lvl-num">1</b> · <span id="lvl-title">—</span></div>
+    <button class="lvlbtn" id="lvl-next" title="Next level">▶</button>
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- ============ MACHINE SIMULATION ============ -->
+  <section class="panel" id="sim-zone">
+    <div class="head"><span class="dot"></span><span class="t">Machine · Turning Simulation</span>
+      <span class="rt" id="sim-status">READY</span></div>
+    <div class="body">
+      <canvas id="stage" width="900" height="470"></canvas>
+      <div class="dro" id="dro"></div>
+      <div class="legend">
+        <span><i class="l-r"></i>G00 rapid</span>
+        <span><i class="l-f"></i>G01 feed</span>
+        <span><i class="l-t"></i>target</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ TECHNICAL DRAWING ============ -->
+  <section class="panel" id="draw-zone">
+    <div class="head"><span class="dot"></span><span class="t">Technical Drawing · Target Part</span></div>
+    <div class="body">
+      <div id="drawing"></div>
+      <div class="draw-note" id="draw-note"></div>
+    </div>
+  </section>
+
+  <!-- ============ TRANSPORT ============ -->
+  <section class="panel" id="trans-zone">
+    <div class="body">
+      <button class="tb primary" id="btn-play">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        <span id="play-label">Play</span></button>
+      <button class="tb" id="btn-step">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5v14l8-7zM16 5h3v14h-3z"/></svg>Step</button>
+      <button class="tb" id="btn-reset">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7a5 5 0 1 1-5 5H5a7 7 0 1 0 7-7z"/></svg>Reset</button>
+      <div class="speed">Speed
+        <input type="range" id="speed" min="1" max="10" value="4">
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ BOTTOM ROW ============ -->
+  <div id="bottom-zone">
+
+    <!-- REFERENCE -->
+    <section class="panel" id="ref-zone">
+      <div class="head"><span class="dot"></span><span class="t">Reference</span></div>
+      <div class="body">
+        <details class="ref" open>
+          <summary>Basic G-Codes</summary>
+          <table class="ref-tbl">
+            <tr><td class="g">G00</td><td>Rapid move (positioning) — no cut</td></tr>
+            <tr><td class="g">G01</td><td>Straight cut at feed — needs F</td></tr>
+            <tr><td class="g">G20/G21</td><td>Inch / Metric (G21 = mm)</td></tr>
+            <tr><td class="g">G28</td><td>Return to machine home (U0 W0)</td></tr>
+            <tr><td class="g">G40</td><td>Tool-nose comp OFF</td></tr>
+            <tr><td class="g">G50</td><td>Clamp max spindle RPM</td></tr>
+            <tr><td class="g">G96/G97</td><td>Const. surface speed / fixed RPM</td></tr>
+            <tr><td class="g">G98/G99</td><td>Feed per min / per rev (lathe: G99)</td></tr>
+          </table>
+        </details>
+        <details class="ref" open>
+          <summary>Basic M-Codes</summary>
+          <table class="ref-tbl">
+            <tr><td class="g">M03</td><td>Spindle ON, forward (CW)</td></tr>
+            <tr><td class="g">M04</td><td>Spindle ON, reverse (CCW)</td></tr>
+            <tr><td class="g">M05</td><td>Spindle STOP</td></tr>
+            <tr><td class="g">M08</td><td>Coolant ON</td></tr>
+            <tr><td class="g">M09</td><td>Coolant OFF</td></tr>
+            <tr><td class="g">M30</td><td>End of program + rewind</td></tr>
+          </table>
+        </details>
+        <details class="ref">
+          <summary>Address Words</summary>
+          <table class="ref-tbl">
+            <tr><td class="g">X</td><td><b>Diameter</b> (absolute). X40 = Ø40</td></tr>
+            <tr><td class="g">Z</td><td>Axial position (absolute). Z0 = face</td></tr>
+            <tr><td class="g">U / W</td><td>Incremental X (Ø) / Z</td></tr>
+            <tr><td class="g">F</td><td>Feed (mm/rev under G99)</td></tr>
+            <tr><td class="g">S</td><td>Spindle speed (rpm or m/min)</td></tr>
+            <tr><td class="g">T</td><td>Tool + offset, e.g. T0101</td></tr>
+          </table>
+        </details>
+      </div>
+    </section>
+
+    <!-- THINGS TO NOTE / ASK COACH -->
+    <section class="panel" id="notes-zone">
+      <div class="head">
+        <span class="dot"></span>
+        <button class="ntab active" id="tab-notes" data-pane="notes">Things to Note</button>
+        <button class="ntab" id="tab-chat" data-pane="chat">💬 Ask Coach</button>
+        <button class="tb" id="btn-solution" style="margin-left:auto;padding:5px 10px;font-size:11px">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:11px;height:11px"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
+          Solution
+        </button></div>
+      <div class="body" id="notes"></div>
+      <div class="body" id="chatpane" style="display:none">
+        <div class="chat-log" id="chatlog"></div>
+        <div class="chat-quick" id="chatquick"></div>
+        <div class="chat-input">
+          <input id="chatq" type="text" autocomplete="off" spellcheck="false"
+                 placeholder="Ask about a G-code, this part, tolerance…">
+          <button id="chatsend" class="tb go" title="Send">Ask</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- CODE EDITOR -->
+    <section class="panel" id="code-zone">
+      <div class="head"><span class="dot"></span><span class="t">Coding · MDI / Program</span>
+        <span class="rt">O-PROGRAM</span></div>
+      <div class="body">
+        <div class="editor">
+          <div class="gutter" id="gutter"></div>
+          <textarea id="code" spellcheck="false" autocapitalize="characters"></textarea>
+        </div>
+        <div class="ed-foot">
+          <span class="hint">Write FANUC turning G-code · X is a diameter · press Play to simulate</span>
+          <button class="tb go" id="btn-submit">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>Submit</button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<!-- RESULT MODAL -->
+<div class="overlay" id="overlay">
+  <div class="result">
+    <div class="rhead" id="rhead">
+      <div>
+        <div class="verdict" id="verdict">—</div>
+        <div class="sub" id="verdict-sub"></div>
+      </div>
+      <button class="close" id="close-result">Close</button>
+    </div>
+    <div class="rbody" id="rbody"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   1. LEVEL FRAMEWORK  (data-driven; add objects to author more)
+   target.profile is the single source of truth: it drives both
+   the technical drawing and the scoring target.
+   ============================================================ */
+const LEVELS = [
+  /* ---- LEVEL 1 : face + single diameter ---- */
+  {
+    id: 1,
+    title: "Face & Turn to Ø40",
+    tolerance: 0.3,                 // mm on radius
+    stock: { diameter: 50, length: 60, faceAllow: 2, material: "6061 Aluminium" },
+    // profile as (z, diameter) polyline, face at Z0, part extends to -Z
+    target: { profile: [
+      { z:-60, dia:50 }, { z:-30, dia:50 }, { z:-30, dia:40 }, { z:0, dia:40 }
+    ]},
+    notes: [
+      { type:"note", t:"X is a diameter", body:"Program <code class='i'>X40</code> and the tool goes to a 20&nbsp;mm radius. Take 5&nbsp;mm off the radius and the diameter drops 10&nbsp;mm." },
+      { type:"note", t:"Z0 is the face", body:"Z0 sits at the finished right-hand face; Z is negative going into the part toward the chuck." },
+      { type:"tip",  t:"Order of work", body:"Face the end first for a clean Z-reference, then turn the Ø40 over the 30&nbsp;mm length, then retract and go home." }
+    ],
+    steps: [
+      "Safe start: <code class='i'>G21 G40 G99</code> (metric, comp off, feed/rev)",
+      "Setup: home, call tool <code class='i'>T0101</code>, clamp rpm <code class='i'>G50 S3000</code>, spindle <code class='i'>G96 S180 M03</code>",
+      "Face: rapid to Ø52 at Z0, feed <code class='i'>X-1</code> past centre",
+      "Turn: rapid to <code class='i'>X40</code>, feed <code class='i'>Z-30</code> down the length",
+      "Shoulder: face out at <code class='i'>X50</code>",
+      "Safe end: retract, <code class='i'>M05</code>, home, <code class='i'>M30</code>"
+    ],
+    starter:
+`O0001 (LEVEL 1 - FACE AND TURN TO D40)
+(METRIC, COMP OFF, FEED/REV)
+(HOME)
+(OD ROUGHING TOOL)
+(CLAMP MAX RPM)
+(CONST SURFACE SPEED, SPINDLE CW)
+(RAPID TO FACE, COOLANT ON)
+(FACE ACROSS CENTRE)
+(BACK OFF IN Z)
+(RAPID TO FINISH DIAMETER)
+(TURN D40 OVER 30MM)
+(FACE OUT THE SHOULDER)
+(RETRACT, COOLANT OFF)
+(SPINDLE STOP)
+(HOME)
+(END OF PROGRAM)`,
+    model:
+`O0001 (FACE AND TURN TO D40)
+G21 G40 G99
+G28 U0 W0
+T0101 (OD ROUGH)
+G50 S3000
+G96 S180 M03
+G00 X52 Z0 M08
+G01 X-1 F0.12   (FACE)
+G00 Z2
+G00 X40
+G01 Z-30 F0.15  (TURN D40)
+G01 X50         (SHOULDER)
+G00 X200 Z200 M09
+M05
+G28 U0 W0
+M30`
+  },
+
+  /* ---- LEVEL 2 : stepped shaft (manual G01 example style) ---- */
+  {
+    id: 2,
+    title: "Stepped Shaft Ø60-Ø50-Ø40",
+    tolerance: 0.3,
+    stock: { diameter: 60, length: 70, faceAllow: 2, material: "1045 Steel" },
+    target: { profile: [
+      { z:-70, dia:60 }, { z:-35, dia:60 }, { z:-35, dia:50 },
+      { z:-20, dia:50 }, { z:-20, dia:40 }, { z:0, dia:40 }
+    ]},
+    notes: [
+      { type:"note", t:"Two shoulders", body:"Ø40 nose for the first 20&nbsp;mm, Ø50 for the next 15&nbsp;mm, then the Ø60 shank. Each diameter is one turning pass." },
+      { type:"tip",  t:"Rough large to small", body:"Turn the bigger Ø50 section first (Z-35), then the Ø40 nose (Z-20). Retract clear in X (<code class='i'>G00 X62</code>) before rapiding back for the next pass." },
+      { type:"warn", t:"Keep M-codes clean", body:"The FANUC manual notes an M-code shouldn't share a block with S or T. Give <code class='i'>M08</code>/<code class='i'>M03</code> their own place where you can." }
+    ],
+    steps: [
+      "Safe start + setup (home, <code class='i'>T0101</code>, <code class='i'>G50/G96</code>, <code class='i'>M03</code>)",
+      "Face at Ø62 / Z0 with <code class='i'>X-1</code>",
+      "Turn Ø50 section: <code class='i'>X50</code>, feed <code class='i'>Z-35</code>, retract <code class='i'>X62</code>",
+      "Turn Ø40 nose: <code class='i'>X40</code>, feed <code class='i'>Z-20</code> (the step forms at Z-20)",
+      "Retract, spindle off, home, <code class='i'>M30</code>"
+    ],
+    starter:
+`O0002 (STEPPED SHAFT D60-D50-D40)
+(METRIC, COMP OFF, FEED/REV)
+(HOME)
+(OD ROUGHING TOOL)
+(CLAMP MAX RPM)
+(CONST SURFACE SPEED, SPINDLE CW)
+(RAPID TO FACE, COOLANT ON)
+(FACE ACROSS CENTRE)
+(CLEAR IN Z)
+(TURN D50 SECTION TO Z-35)
+(RETRACT IN X)
+(RAPID BACK TO Z)
+(TURN D40 NOSE TO Z-20)
+(RETRACT)
+(GO HOME, COOLANT OFF)
+(SPINDLE STOP)
+(HOME)
+(END OF PROGRAM)`,
+    model:
+`O0002 (STEPPED SHAFT)
+G21 G40 G99
+G28 U0 W0
+T0101 (OD ROUGH)
+G50 S2500
+G96 S180 M03
+G00 X62 Z0 M08
+G01 X-1 F0.12   (FACE)
+G00 Z2
+G00 X50         (D50 SECTION)
+G01 Z-35 F0.2
+G00 X62
+G00 Z2
+G00 X40         (D40 NOSE)
+G01 Z-20 F0.2
+G00 X62
+G00 X200 Z200 M09
+M05
+G28 U0 W0
+M30`
+  },
+
+  /* ---- LEVEL 3 : chamfered nose (manual auto-chamfer example) ---- */
+  {
+    id: 3,
+    title: "Chamfered Nose Ø30 · C2",
+    tolerance: 0.3,
+    stock: { diameter: 50, length: 55, faceAllow: 2, material: "6061 Aluminium" },
+    target: { profile: [
+      { z:-55, dia:50 }, { z:-25, dia:50 }, { z:-25, dia:30 },
+      { z:-2, dia:30 }, { z:0, dia:26 }
+    ]},
+    notes: [
+      { type:"note", t:"C2 = 2 mm chamfer", body:"A 45° chamfer 2&nbsp;mm long: the nose is Ø26 at the face and grows to Ø30 over 2&nbsp;mm of Z. Cut it as a short angled move <code class='i'>X30 Z-2</code>." },
+      { type:"tip",  t:"Angled moves need two words", body:"A taper/chamfer changes X and Z in the same <code class='i'>G01</code> block, e.g. <code class='i'>G01 X30 Z-2</code>. A straight turn changes only Z." },
+      { type:"note", t:"Tool-nose comp (G42)", body:"On real angled cuts pros switch on <code class='i'>G42</code> so the insert's nose radius doesn't leave the part oversize; cancel with <code class='i'>G40</code>." }
+    ],
+    steps: [
+      "Safe start + setup, face at Ø52 / Z0",
+      "Start at the nose OD: <code class='i'>G00 X26</code>, feed <code class='i'>Z0</code>",
+      "Cut the chamfer: <code class='i'>G01 X30 Z-2</code> (45° over 2 mm)",
+      "Turn the Ø30 body: <code class='i'>Z-25</code>",
+      "Shoulder out <code class='i'>X50</code>, retract, home, <code class='i'>M30</code>"
+    ],
+    starter:
+`O0003 (CHAMFERED NOSE D30 C2)
+(METRIC, COMP OFF, FEED/REV)
+(HOME)
+(OD ROUGHING TOOL)
+(CLAMP MAX RPM)
+(CONST SURFACE SPEED, SPINDLE CW)
+(RAPID TO FACE, COOLANT ON)
+(FACE ACROSS CENTRE)
+(CLEAR IN Z)
+(RAPID TO NOSE OD D26)
+(FEED TO THE FACE Z0)
+(CUT 2MM 45DEG CHAMFER)
+(TURN D30 BODY TO Z-25)
+(FACE OUT THE SHOULDER)
+(RETRACT, COOLANT OFF)
+(SPINDLE STOP)
+(HOME)
+(END OF PROGRAM)`,
+    model:
+`O0003 (CHAMFERED NOSE)
+G21 G40 G99
+G28 U0 W0
+T0101 (OD ROUGH)
+G50 S3000
+G96 S200 M03
+G00 X52 Z0 M08
+G01 X-1 F0.12   (FACE)
+G00 Z2
+G00 X26         (NOSE OD)
+G01 Z0 F0.15
+G01 X30 Z-2     (CHAMFER C2)
+G01 Z-25        (TURN D30)
+G01 X50         (SHOULDER)
+G00 X200 Z200 M09
+M05
+G28 U0 W0
+M30`
+  },
+
+  /* ---- LEVEL 4 : taper turning ---- */
+  {
+    id:4, title:"Taper Nose Ø30 → Ø50", tolerance:0.35,
+    stock:{diameter:50, length:60, faceAllow:2, material:"6061 Aluminium"},
+    target:{ profile:[ {z:-60,dia:50}, {z:-40,dia:50}, {z:0,dia:30} ]},
+    notes:[
+      {type:"note", t:"Tapers move X and Z together", body:"A cone is one <code class='i'>G01</code> that changes X and Z at the same time, e.g. <code class='i'>G01 X50 Z-40</code>."},
+      {type:"tip",  t:"Start small, end big", body:"Begin at the Ø30 nose (Z0) and feed out to Ø50 at Z-40 — the tool climbs the cone in a single diagonal move."}
+    ],
+    steps:["Face at Ø52 / Z0","Rapid to the Ø30 nose, feed to Z0","Single diagonal cut <code class='i'>G01 X50 Z-40</code>","Retract, spindle off, home, M30"],
+    starter:
+`O0004 (TAPER NOSE D30 TO D50)
+(METRIC, COMP OFF, FEED/REV)
+(HOME)
+(OD TURNING TOOL)
+(CLAMP MAX RPM)
+(CONST SURFACE SPEED, SPINDLE CW)
+(RAPID TO FACE, COOLANT ON)
+(FACE ACROSS CENTRE)
+(CLEAR IN Z)
+(RAPID TO NOSE D30)
+(FEED TO THE FACE Z0)
+(CUT TAPER TO D50 OVER 40MM)
+(RETRACT, COOLANT OFF)
+(SPINDLE STOP)
+(HOME)
+(END OF PROGRAM)`,
+    model:
+`O0004 (TAPER NOSE)
+G21 G40 G99
+G28 U0 W0
+T0101 (OD TURN)
+G50 S3000
+G96 S200 M03
+G00 X52 Z0 M08
+G01 X-1 F0.12   (FACE)
+G00 Z2
+G00 X30         (NOSE D30)
+G01 Z0 F0.15
+G01 X50 Z-40    (TAPER TO D50)
+G00 X200 Z200 M09
+M05
+G28 U0 W0
+M30`
+  },
+
+  /* ---- LEVEL 5 : OD grooving ---- */
+  {
+    id:5, title:"OD Groove Ø30 @ Z-15", tolerance:0.35,
+    stock:{diameter:50, length:60, faceAllow:2, material:"1045 Steel"},
+    tools:{ '04':{width:4} },
+    target:{ profile:[
+      {z:-60,dia:50},{z:-40,dia:50},{z:-40,dia:40},{z:-17,dia:40},
+      {z:-17,dia:30},{z:-13,dia:30},{z:-13,dia:40},{z:0,dia:40} ]},
+    notes:[
+      {type:"note", t:"A groove is a plunge", body:"The grooving tool plunges straight in (X only) to the groove-bottom diameter. Its width sets the groove width."},
+      {type:"tip",  t:"Two tools, two jobs", body:"Turn the Ø40 with the OD tool first, then index to the 4&nbsp;mm groove tool (T0404) and use <code class='i'>G75</code> to plunge to Ø30."},
+      {type:"warn", t:"Slow down for grooving", body:"Grooving is an interrupted, full-width cut — drop to fixed rpm <code class='i'>G97</code> and a light feed."}
+    ],
+    steps:["Turn Ø40 over the length","Index to the groove tool T0404","Position at the groove centre Z-15","<code class='i'>G75 X30 Z-15</code> plunges the groove","Retract, home, M30"],
+    starter:
+`O0005 (GROOVE D30 AT Z-15)
+(METRIC, COMP OFF, FEED/REV)
+(HOME)
+(OD TURNING TOOL)
+(CLAMP MAX RPM)
+(CONST SURFACE SPEED, SPINDLE CW)
+(RAPID TO FACE, COOLANT ON)
+(FACE ACROSS CENTRE)
+(CLEAR, RAPID TO D40)
+(TURN D40 TO Z-40)
+(RETRACT, PARK)
+(INDEX TO GROOVE TOOL W4)
+(FIXED RPM, SPINDLE CW)
+(POSITION AT GROOVE CENTRE Z-15)
+(GROOVE DOWN TO D30)
+(RETRACT, PARK, COOLANT OFF)
+(SPINDLE STOP)
+(HOME)
+(END OF PROGRAM)`,
+    model:
+`O0005 (GROOVE D30)
+G21 G40 G99
+G28 U0 W0
+T0101 (OD TURN)
+G50 S2500
+G96 S180 M03
+G00 X52 Z0 M08
+G01 X-1 F0.12   (FACE)
+G00 Z2
+G00 X40
+G01 Z-40 F0.2   (TURN D40)
+G00 X62
+G00 X200 Z200
+T0404 (GROOVE TOOL W4)
+G97 S800 M03
+G00 X44 Z-15 M08
+G75 X30 Z-15 F0.1  (GROOVE D30)
+G00 X62
+G00 X200 Z200 M09
+M05
+G28 U0 W0
+M30`
+  },
+
+  /* ---- LEVEL 6 : centre drilling inside ---- */
+  {
+    id:6, title:"Drill Ø20 × 40 Deep", tolerance:0.4,
+    stock:{diameter:50, length:60, faceAllow:2, material:"6061 Aluminium"},
+    tools:{ '02':{dia:20} },
+    target:{ profile:[ {z:-60,dia:50},{z:0,dia:50} ],
+             bore:[ {z:-40,dia:20},{z:0,dia:20} ] },
+    notes:[
+      {type:"note", t:"Drills work on centre", body:"A lathe drill sits in the turret at X0 and feeds along Z. You don't program a diameter — the drill's own size makes the hole."},
+      {type:"tip",  t:"Peck to clear chips", body:"Use <code class='i'>G74</code> peck drilling once past ~3× drill diameter deep so the flutes don't pack and snap."},
+      {type:"warn", t:"Fixed rpm for drilling", body:"Drilling is a centre-line cut — surface speed is meaningless at Ø0, so use <code class='i'>G97</code> fixed rpm."}
+    ],
+    steps:["Face the end with T0101","Index to the Ø20 drill T0202 on centre (X0)","<code class='i'>G74 Z-40 Q..</code> pecks the hole","Retract off centre, home, M30"],
+    starter:
+`O0006 (DRILL D20 X 40 DEEP)
+(METRIC, COMP OFF, FEED/REV)
+(HOME)
+(FACING TOOL)
+(CLAMP MAX RPM)
+(CONST SURFACE SPEED, SPINDLE CW)
+(RAPID TO FACE, COOLANT ON)
+(FACE ACROSS CENTRE)
+(PARK)
+(INDEX TO D20 DRILL)
+(FIXED RPM, SPINDLE CW)
+(RAPID TO CENTRE X0, CLEAR)
+(PECK RETRACT AMOUNT)
+(PECK DRILL TO Z-40)
+(RETRACT OFF CENTRE)
+(PARK, COOLANT OFF)
+(SPINDLE STOP)
+(HOME)
+(END OF PROGRAM)`,
+    model:
+`O0006 (DRILL D20 X40)
+G21 G40 G99
+G28 U0 W0
+T0101 (FACE)
+G50 S2000
+G96 S180 M03
+G00 X52 Z0 M08
+G01 X-1 F0.12   (FACE)
+G00 X200 Z200
+T0202 (D20 DRILL)
+G97 S600 M03
+G00 X0 Z2 M08
+G74 R1.0
+G74 Z-40 Q5000 F0.12  (PECK DRILL)
+G00 Z200
+G00 X200 M09
+M05
+G28 U0 W0
+M30`
+  },
+
+  /* ---- LEVEL 7 : boring an internal diameter ---- */
+  {
+    id:7, title:"Bore Ø30 × 30 Deep", tolerance:0.35,
+    stock:{diameter:50, length:60, faceAllow:2, material:"1045 Steel"},
+    tools:{ '02':{dia:20} },
+    target:{ profile:[ {z:-60,dia:50},{z:0,dia:50} ],
+             bore:[ {z:-42,dia:20},{z:-30,dia:20},{z:-30,dia:30},{z:0,dia:30} ] },
+    notes:[
+      {type:"note", t:"Drill first, then bore", body:"A boring bar can only enlarge an existing hole. Drill Ø20 to clear, then bore out to the finished Ø30."},
+      {type:"tip",  t:"Bore = internal turning", body:"Inside the hole, a G01 at a bigger X enlarges the bore. X is still a diameter — <code class='i'>X30</code> = a Ø30 hole."},
+      {type:"note", t:"Watch the bar clearance", body:"The bar must fit inside the drilled hole before it feeds — enter at a diameter smaller than the drill."}
+    ],
+    steps:["Face, then drill Ø20 to Z-42","Index to the boring bar T0303","Enter the hole at Ø30, feed <code class='i'>Z-30</code>","Back off the bore, retract, home, M30"],
+    starter:
+`O0007 (BORE D30 X 30 DEEP)
+(METRIC, COMP OFF, FEED/REV)
+(HOME)
+(FACING TOOL)
+(CLAMP MAX RPM)
+(CONST SURFACE SPEED, SPINDLE CW)
+(RAPID TO FACE, COOLANT ON)
+(FACE ACROSS CENTRE)
+(PARK)
+(INDEX TO D20 DRILL)
+(FIXED RPM, SPINDLE CW)
+(RAPID TO CENTRE X0, CLEAR)
+(PECK RETRACT AMOUNT)
+(PECK DRILL TO Z-42)
+(PARK)
+(INDEX TO BORING BAR)
+(CONST SURFACE SPEED, SPINDLE CW)
+(ENTER HOLE AT D30)
+(BORE TO Z-30)
+(BACK OFF THE BORE)
+(RETRACT, PARK, COOLANT OFF)
+(SPINDLE STOP)
+(HOME)
+(END OF PROGRAM)`,
+    model:
+`O0007 (BORE D30)
+G21 G40 G99
+G28 U0 W0
+T0101 (FACE)
+G50 S2000
+G96 S180 M03
+G00 X52 Z0 M08
+G01 X-1 F0.12   (FACE)
+G00 X200 Z200
+T0202 (D20 DRILL)
+G97 S600 M03
+G00 X0 Z2 M08
+G74 R1.0
+G74 Z-42 Q5000 F0.12
+G00 Z200
+G00 X200
+T0303 (BORING BAR)
+G96 S150 M03
+G00 X30 Z2 M08
+G01 Z-30 F0.12  (BORE D30)
+G00 X26
+G00 Z200
+G00 X200 M09
+M05
+G28 U0 W0
+M30`
+  },
+
+  /* ---- LEVEL 8 : OD threading ---- */
+  {
+    id:8, title:"OD Thread M24 × 2", tolerance:0.4,
+    stock:{diameter:30, length:55, faceAllow:2, material:"1045 Steel"},
+    target:{ profile:[ {z:-55,dia:30},{z:-28,dia:30},{z:-28,dia:24},{z:0,dia:24} ],
+             threads:[ {side:'OD', z1:-25, majorDia:24, minorDia:21.4, pitch:2} ] },
+    notes:[
+      {type:"note", t:"Turn the major first", body:"A thread starts from a plain cylinder at the major diameter — turn Ø24 before you cut an M24 thread."},
+      {type:"tip",  t:"G76 does the passes", body:"The <code class='i'>G76</code> cycle sinks the V-form in many passes. The F word is the pitch (lead): <code class='i'>F2.0</code> for M24×2."},
+      {type:"warn", t:"Fixed rpm to thread", body:"Threading must hold a fixed rpm (<code class='i'>G97</code>) so the lead stays true; the tool syncs to the spindle."}
+    ],
+    steps:["Face, then turn the Ø24 major diameter","Index to the threading tool T0505, fixed rpm","<code class='i'>G76</code> setup line (angle, passes)","<code class='i'>G76 X21.4 Z-25 ... F2.0</code> cuts M24×2","Retract, home, M30"],
+    starter:
+`O0008 (OD THREAD M24 X 2)
+(METRIC, COMP OFF, FEED/REV)
+(HOME)
+(OD TURNING TOOL)
+(CLAMP MAX RPM)
+(CONST SURFACE SPEED, SPINDLE CW)
+(RAPID TO FACE, COOLANT ON)
+(FACE ACROSS CENTRE)
+(CLEAR, RAPID TO D24 MAJOR)
+(TURN D24 TO Z-28)
+(SHOULDER OUT, PARK)
+(INDEX TO THREAD TOOL)
+(FIXED RPM, SPINDLE CW)
+(POSITION CLEAR OF THREAD)
+(G76 SETUP - ANGLE AND PASSES)
+(G76 CUT M24 X 2 TO Z-25)
+(PARK, COOLANT OFF)
+(SPINDLE STOP)
+(HOME)
+(END OF PROGRAM)`,
+    model:
+`O0008 (OD THREAD M24X2)
+G21 G40 G99
+G28 U0 W0
+T0101 (OD TURN)
+G50 S2500
+G96 S200 M03
+G00 X32 Z0 M08
+G01 X-1 F0.12   (FACE)
+G00 Z2
+G00 X24         (D24 MAJOR)
+G01 Z-28 F0.2
+G01 X30
+G00 X200 Z200
+T0505 (THREAD TOOL)
+G97 S500 M03
+G00 X26 Z3 M08
+G76 P020060 Q100 R100
+G76 X21.4 Z-25 P1300 Q400 F2.0
+G00 X200 Z200 M09
+M05
+G28 U0 W0
+M30`
+  },
+
+  /* ---- LEVEL 9 : ID threading ---- */
+  {
+    id:9, title:"ID Thread M24 × 1.5", tolerance:0.4,
+    stock:{diameter:40, length:50, faceAllow:2, material:"1045 Steel"},
+    tools:{ '02':{dia:22.5} },
+    target:{ profile:[ {z:-50,dia:40},{z:0,dia:40} ],
+             bore:[ {z:-30,dia:22.5},{z:0,dia:22.5} ],
+             threads:[ {side:'ID', z1:-25, majorDia:24, minorDia:24, pitch:1.5} ] },
+    notes:[
+      {type:"note", t:"Tap-drill, then thread", body:"An internal thread needs a hole first. For M24×1.5, drill the tap-drill Ø22.5 (major − pitch), then cut the thread in the bore."},
+      {type:"tip",  t:"G76 X is the crest", body:"For an ID thread the <code class='i'>G76</code> X grows the hole to the thread crest (Ø24), the opposite direction to an OD thread."},
+      {type:"warn", t:"Reach and clearance", body:"The internal threading bar must enter the hole first — approach at a smaller diameter, then cut outward."}
+    ],
+    steps:["Face, then tap-drill Ø22.5 to Z-30","Index to the internal thread tool T0606","Enter the hole clear of the wall","<code class='i'>G76</code> setup, then <code class='i'>G76 X24 Z-25 ... F1.5</code>","Retract, home, M30"],
+    starter:
+`O0009 (ID THREAD M24 X 1.5)
+(METRIC, COMP OFF, FEED/REV)
+(HOME)
+(FACING TOOL)
+(CLAMP MAX RPM)
+(CONST SURFACE SPEED, SPINDLE CW)
+(RAPID TO FACE, COOLANT ON)
+(FACE ACROSS CENTRE)
+(PARK)
+(INDEX TO TAP DRILL D22.5)
+(FIXED RPM, SPINDLE CW)
+(RAPID TO CENTRE X0, CLEAR)
+(PECK RETRACT AMOUNT)
+(PECK DRILL TO Z-30)
+(PARK)
+(INDEX TO ID THREAD TOOL)
+(FIXED RPM, SPINDLE CW)
+(ENTER HOLE, CLEAR)
+(G76 SETUP - ANGLE AND PASSES)
+(G76 CUT M24 X 1.5 ID TO Z-25)
+(PARK, COOLANT OFF)
+(SPINDLE STOP)
+(HOME)
+(END OF PROGRAM)`,
+    model:
+`O0009 (ID THREAD M24X1.5)
+G21 G40 G99
+G28 U0 W0
+T0101 (FACE)
+G50 S2000
+G96 S180 M03
+G00 X42 Z0 M08
+G01 X-1 F0.12   (FACE)
+G00 X200 Z200
+T0202 (TAP DRILL D22.5)
+G97 S500 M03
+G00 X0 Z2 M08
+G74 R1.0
+G74 Z-30 Q5000 F0.1
+G00 Z200
+G00 X200
+T0606 (ID THREAD TOOL)
+G97 S400 M03
+G00 X20 Z3 M08
+G76 P020060 Q50 R100
+G76 X24.0 Z-25 P800 Q300 F1.5
+G00 Z200
+G00 X200 M09
+M05
+G28 U0 W0
+M30`
+  },
+
+  /* ---- LEVEL 10 : keyslot on OD (live tooling) ---- */
+  {
+    id:10, title:"Keyslot on OD (Live Tool)", tolerance:0.4,
+    stock:{diameter:40, length:60, faceAllow:2, material:"6061 Aluminium"},
+    tools:{ '07':{dia:8} },
+    target:{ profile:[ {z:-60,dia:40},{z:0,dia:40} ],
+             slots:[ {z0:-30, z1:-10, depth:5, width:8} ] },
+    notes:[
+      {type:"note", t:"Live tooling + C-axis", body:"A keyslot needs a rotating (live) end mill and the spindle locked as a C-axis. Turn the main spindle off, then switch the live tool on."},
+      {type:"tip",  t:"Plunge, then feed along Z", body:"Index to C0, plunge the mill to depth in X (Ø40→X30 = 5&nbsp;mm deep), then feed along Z to cut the slot length."},
+      {type:"warn", t:"This isn't turning", body:"The slot is milled on the side — it breaks the round shape, so it shows in the END VIEW, not the turned profile."}
+    ],
+    steps:["Turn/clean the Ø40 OD","Stop the main spindle, switch on the live tool (M13) + C-axis","Index C0, position above the slot start","Plunge <code class='i'>G01 X30</code> (5&nbsp;mm deep), then <code class='i'>G01 Z-30</code>","Retract, home, M30"],
+    starter:
+`O0010 (KEYSLOT ON OD - LIVE TOOL)
+(METRIC, COMP OFF, FEED/REV)
+(HOME)
+(OD TURNING TOOL)
+(CLAMP MAX RPM)
+(CONST SURFACE SPEED, SPINDLE CW)
+(RAPID TO FACE, COOLANT ON)
+(FACE ACROSS CENTRE)
+(CLEAR, RAPID TO D40)
+(TURN/CLEAN D40)
+(RETRACT, PARK)
+(INDEX TO LIVE END MILL D8)
+(STOP MAIN SPINDLE)
+(LIVE TOOL + C-AXIS ON)
+(INDEX TO C0)
+(ABOVE SLOT START Z-10)
+(PLUNGE 5MM DEEP X30)
+(MILL SLOT ALONG Z TO Z-30)
+(RETRACT)
+(PARK, COOLANT OFF)
+(SPINDLE STOP)
+(HOME)
+(END OF PROGRAM)`,
+    model:
+`O0010 (KEYSLOT ON OD)
+G21 G40 G99
+G28 U0 W0
+T0101 (OD TURN)
+G50 S2000
+G96 S180 M03
+G00 X42 Z0 M08
+G01 X-1 F0.12   (FACE)
+G00 Z2
+G00 X40
+G01 Z-55 F0.2   (CLEAN D40)
+G00 X200 Z200
+T0707 (LIVE END MILL D8)
+M05
+G97 S1500 M13   (LIVE TOOL + C-AXIS)
+G00 C0
+G00 X42 Z-10 M08
+G01 X30 F0.05   (PLUNGE 5MM DEEP)
+G01 Z-30 F0.1   (MILL 20MM SLOT)
+G00 X42
+G00 X200 Z200 M09
+M05
+G28 U0 W0
+M30`
+  },
+
+  /* ---- LEVEL 11 : R100 ball-nose, G03 with I,K ---- */
+  {
+    id:11, title:"Ball Nose R100 · G03 I,K", tolerance:0.8,
+    stock:{diameter:224, length:63, faceAllow:0, material:"1045 Steel"},
+    target:{ profile:[
+      {z:0, dia:40},
+      {z:-56.4, dia:220, arc:{i:0, k:-100, cw:false}},
+      {z:-61, dia:220},
+      {z:-61, dia:224},
+      {z:-63, dia:224} ]},
+    notes:[
+      {type:"note", t:"Arcs need a centre", body:"<code class='i'>G03</code> (CCW) cuts an arc. <b>I</b> and <b>K</b> are the distance from the arc START to its CENTRE — I along X (radius), K along Z."},
+      {type:"tip",  t:"Sign of I and K", body:"Here the centre sits 100&nbsp;mm behind the start, so <code class='i'>K-100</code>; it's on the same radius, so <code class='i'>I0</code>. That gives a R100 dome."},
+      {type:"warn", t:"G02 vs G03", body:"G02 is clockwise, G03 counter-clockwise. Pick the wrong one and the tool arcs the wrong way — into the part or into air."}
+    ],
+    steps:["Face / approach the Ø40 nose","Feed to Z0 at the nose","<code class='i'>G03 X220 Z-56.4 I0 K-100</code> sweeps the R100 dome","Straight to Z-61, retract, home, M30"],
+    starter:
+`O0011 (BALL NOSE R100 - G03 I K)
+(METRIC, PLANE, FEED/REV)
+(HOME)
+(OD TURNING TOOL)
+(CLAMP MAX RPM)
+(CONST SURFACE SPEED, SPINDLE CW)
+(RAPID CLEAR, COOLANT ON)
+(RAPID TO THE NOSE D40)
+(FEED TO Z0)
+(G03 ARC R100 OUT TO D220 - USE I,K)
+(STRAIGHT TO Z-61)
+(FACE OUT TO THE RIM)
+(RETRACT, COOLANT OFF)
+(SPINDLE STOP)
+(HOME)
+(END OF PROGRAM)`,
+    model:
+`O0011 (BALL NOSE R100)
+G18 G21 G99
+G28 U0 W0
+T0101 (OD TURN)
+G50 S2000
+G96 S200 M03
+G00 X230 Z5 M08
+G00 X40 Z1
+G01 Z0 F0.2
+G03 X220 Z-56.4 I0 K-100  (R100 DOME)
+G01 Z-61
+G01 X224
+G00 X250 Z50 M09
+M05
+G28 U0 W0
+M30`
+  },
+
+  /* ---- LEVEL 12 : G71 rough + G70 finish, cone + R5 fillet ---- */
+  {
+    id:12, title:"G71/G70 Cycle · Cone + R5", tolerance:0.4,
+    stock:{diameter:40, length:45, faceAllow:2, material:"6061 Aluminium"},
+    target:{ profile:[
+      {z:0, dia:0},
+      {z:-12, dia:24},
+      {z:-18, dia:24},
+      {z:-23, dia:34, arc:{i:5, k:0, cw:true}},
+      {z:-23, dia:40},
+      {z:-45, dia:40} ]},
+    notes:[
+      {type:"note", t:"Rough then finish", body:"<code class='i'>G71</code> hogs the shape out in parallel passes; <code class='i'>G70</code> then runs the same P–Q profile once for the finish cut."},
+      {type:"tip",  t:"Define the contour once", body:"The finished shape lives in the block between <code class='i'>P</code> and <code class='i'>Q</code>. Both cycles point at those N-numbers — you only draw the profile once."},
+      {type:"warn", t:"Leave finish stock", body:"<code class='i'>U0.3 W0.1</code> on the G71 line leaves 0.3&nbsp;mm (Ø) and 0.1&nbsp;mm for G70 to clean up."}
+    ],
+    steps:["Approach clear of the Ø40 stock","<code class='i'>G71 U.. R..</code> then <code class='i'>G71 P10 Q20 ..</code>","Profile N10–N20: cone → Ø24 → R5 → Ø40 shoulder","<code class='i'>G70 P10 Q20</code> finishes it","Retract, home, M30"],
+    starter:
+`O0012 (G71 ROUGH + G70 FINISH)
+(METRIC, PLANE, FEED/REV)
+(HOME)
+(OD TURNING TOOL)
+(CLAMP MAX RPM)
+(CONST SURFACE SPEED, SPINDLE CW)
+(APPROACH CLEAR OF STOCK, COOLANT ON)
+(G71 DEPTH OF CUT AND RETRACT)
+(G71 P10 Q20 - FINISH STOCK AND FEED)
+(N10 PROFILE START AT CENTRE)
+(CONE OUT TO D24)
+(STRAIGHT TO Z-18)
+(R5 FILLET UP TO D34)
+(SHOULDER OUT TO D40)
+(N20 RETRACT ABOVE THE PART)
+(G70 P10 Q20 - FINISH PASS)
+(RETRACT, COOLANT OFF)
+(SPINDLE STOP)
+(HOME)
+(END OF PROGRAM)`,
+    model:
+`O0012 (G71 CONE AND R5)
+G18 G21 G99
+G28 U0 W0
+T0101 (OD TURN)
+G50 S2500
+G96 S220 M03
+G00 X44 Z2 M08
+G71 U1.5 R0.3
+G71 P10 Q20 U0.3 W0.1 F0.25
+N10 G01 X0 Z0 F0.15
+X24 Z-12
+Z-18
+G02 X34 Z-23 R5
+G01 X40
+N20 G00 X44 Z2
+G70 P10 Q20 F0.15
+G00 X200 Z200 M09
+M05
+G28 U0 W0
+M30`
+  },
+
+  /* ---- LEVEL 13 : G72 facing cycle + G70, tapered flange ---- */
+  {
+    id:13, title:"G72 Facing Cycle · Flange", tolerance:0.6,
+    stock:{diameter:150, length:30, faceAllow:0, material:"1045 Steel"},
+    target:{ profile:[
+      {z:0, dia:80},
+      {z:-15, dia:120},
+      {z:-20, dia:120},
+      {z:-25, dia:130, arc:{i:5, k:0, cw:true}},
+      {z:-25, dia:150},
+      {z:-30, dia:150} ]},
+    notes:[
+      {type:"note", t:"G72 roughs across the face", body:"<code class='i'>G72</code> is the facing-direction twin of G71 — it takes its cuts across the face, ideal for big, shallow, disc-shaped parts."},
+      {type:"tip",  t:"Same P–Q idea", body:"Just like G71, the contour lives between <code class='i'>P</code> and <code class='i'>Q</code>, and <code class='i'>G70</code> finishes it. Only the roughing direction differs."},
+      {type:"note", t:"Big diameter, low rpm", body:"Ø150 at the rim spins fast in surface metres — the <code class='i'>G50</code> clamp keeps the rpm sane."}
+    ],
+    steps:["Approach clear of the Ø150 face","<code class='i'>G72 W.. R..</code> then <code class='i'>G72 P30 Q40 ..</code>","Profile N30–N40: Ø80 → taper Ø120 → R5 → Ø150 rim","<code class='i'>G70 P30 Q40</code> finishes it","Retract, home, M30"],
+    starter:
+`O0013 (G72 FACING + G70 FINISH)
+(METRIC, PLANE, FEED/REV)
+(HOME)
+(OD TURNING TOOL)
+(CLAMP MAX RPM)
+(CONST SURFACE SPEED, SPINDLE CW)
+(APPROACH CLEAR OF THE FACE, COOLANT ON)
+(G72 DEPTH OF CUT AND RETRACT)
+(G72 P30 Q40 - FINISH STOCK AND FEED)
+(N30 START AT D80)
+(FEED TO Z0)
+(TAPER OUT TO D120)
+(STRAIGHT TO Z-20)
+(R5 UP TO D130)
+(OUT TO THE D150 RIM)
+(N40 RETRACT CLEAR)
+(G70 P30 Q40 - FINISH PASS)
+(RETRACT, COOLANT OFF)
+(SPINDLE STOP)
+(HOME)
+(END OF PROGRAM)`,
+    model:
+`O0013 (G72 FLANGE)
+G18 G21 G99
+G28 U0 W0
+T0101 (OD TURN)
+G50 S2000
+G96 S180 M03
+G00 X156 Z5 M08
+G72 W1.2 R0.3
+G72 P30 Q40 U0.3 W0.2 F0.25
+N30 G00 X80 Z1
+G01 Z0 F0.15
+X120 Z-15
+Z-20
+G02 X130 Z-25 R5
+G01 X150
+N40 G00 X156 Z5
+G70 P30 Q40 F0.15
+G00 X220 Z120 M09
+M05
+G28 U0 W0
+M30`
+  },
+
+  /* ---- LEVEL 14 : G71 type-II wavy bead profile, alternating arcs ---- */
+  {
+    id:14, title:"Wavy Beads · G02/G03 Chain", tolerance:0.5,
+    stock:{diameter:16, length:40, faceAllow:0, material:"6061 Aluminium"},
+    target:{ profile:[
+      {z:0, dia:10},
+      {z:-8,  dia:10, arc:{R:5, cw:false}},
+      {z:-16, dia:10, arc:{R:5, cw:true}},
+      {z:-24, dia:10, arc:{R:5, cw:false}},
+      {z:-32, dia:10, arc:{R:5, cw:true}},
+      {z:-33.5, dia:10},
+      {z:-33.5, dia:16},
+      {z:-40, dia:16} ]},
+    notes:[
+      {type:"note", t:"Chaining arcs", body:"A wavy surface is just arcs back-to-back — each <code class='i'>G02/G03</code> starts where the last one ended. Here every hump is <code class='i'>R5</code>."},
+      {type:"tip",  t:"R word instead of I,K", body:"When you know the radius, <code class='i'>R5</code> is quicker than working out I and K. Positive R = the short way round (&lt;180°)."},
+      {type:"warn", t:"Alternate the direction", body:"Bulges and valleys alternate <code class='i'>G03</code>/<code class='i'>G02</code>. Keep the same R but flip the direction each hump."}
+    ],
+    steps:["Approach, rough with <code class='i'>G71</code> P40 Q42","Profile: Ø10 → four R5 arcs alternating G03/G02","End the profile at Z-33.5, out to Ø16","<code class='i'>G70 P40 Q42</code> finishes the wave","Retract, home, M30"],
+    starter:
+`O0014 (WAVY BEADS - ARC CHAIN)
+(METRIC, PLANE, FEED/REV)
+(HOME)
+(OD TURNING TOOL)
+(CLAMP MAX RPM)
+(CONST SURFACE SPEED, SPINDLE CW)
+(APPROACH CLEAR, COOLANT ON)
+(G71 DEPTH AND RETRACT)
+(G71 P40 Q42 - FINISH STOCK AND FEED)
+(N40 START AT D10)
+(FEED TO Z0)
+(G03 R5 HUMP TO Z-8)
+(G02 R5 VALLEY TO Z-16)
+(G03 R5 HUMP TO Z-24)
+(G02 R5 VALLEY TO Z-32)
+(STRAIGHT TO Z-33.5)
+(OUT TO THE D16 SHANK)
+(N42 RETRACT)
+(G70 P40 Q42 - FINISH PASS)
+(RETRACT, COOLANT OFF, SPINDLE STOP)
+(HOME)
+(END OF PROGRAM)`,
+    model:
+`O0014 (WAVY BEADS)
+G18 G21 G99
+G28 U0 W0
+T0101 (OD TURN)
+G50 S2500
+G96 S200 M03
+G00 X18 Z2 M08
+G71 U0.8 R0.3
+G71 P40 Q42 U0.2 W0.05 F0.2
+N40 G01 X10 Z1 F0.15
+Z0
+G03 X10 Z-8 R5
+G02 X10 Z-16 R5
+G03 X10 Z-24 R5
+G02 X10 Z-32 R5
+G01 Z-33.5
+X16
+N42 G00 X20 Z2
+G70 P40 Q42 F0.15
+G00 X200 Z200 M09
+M05
+G28 U0 W0
+M30`
+  }
+];
+
+/* ============================================================
+   2. GEOMETRY  (per-level sampling grid)
+   ============================================================ */
+let LV, R0, LEN, FACE, ZMIN, ZMAX, STEP=0.25, N, zAxis, edges;
+function setupGeometry(level){
+  LV   = level;
+  R0   = level.stock.diameter/2;
+  LEN  = level.stock.length;
+  FACE = level.stock.faceAllow ?? 2;
+  ZMIN = -LEN; ZMAX = FACE;
+  N    = Math.round((ZMAX-ZMIN)/STEP)+1;
+  zAxis = new Array(N);
+  for(let i=0;i<N;i++) zAxis[i] = ZMIN + i*STEP;
+}
+const idxOf = z => Math.max(0, Math.min(N-1, Math.round((z-ZMIN)/STEP)));
+
+/* Tool table: the first two digits of a T-word pick the tool.
+   Levels may override size via level.tools = { '02':{dia:16}, ... }         */
+const TOOL_TABLE = {
+  '01':{kind:'turn',   name:'OD Turning'},
+  '02':{kind:'drill',  name:'Drill', dia:20},
+  '03':{kind:'bore',   name:'Boring Bar'},
+  '04':{kind:'groove', name:'Grooving / Part-off', width:3},
+  '05':{kind:'thread', name:'OD Threading', side:'OD'},
+  '06':{kind:'thread', name:'ID Threading', side:'ID'},
+  '07':{kind:'mill',   name:'Live End Mill', dia:8}
+};
+function resolveTool(tcode, level){
+  if(!tcode) return {kind:'turn', name:'OD Turning'};
+  const key = String(tcode).replace(/^T/i,'').padStart(4,'0').slice(0,2);
+  const def = TOOL_TABLE[key] || {kind:'turn', name:'Tool '+key};
+  const ov  = level && level.tools && level.tools[key];
+  return Object.assign({}, def, ov||{}, {key});
+}
+
+/* ============================================================
+   3. G-CODE INTERPRETER
+   ============================================================ */
+function interpret(code){
+  const lines = code.replace(/\r/g,"").split("\n");
+  const segments = [];         // {kind:'rapid'|'feed', from:{r,z}, to:{r,z}, feed, spindleOn, block}
+  const diag = [];             // {block, sev:'warn'|'err'|'info', msg}
+  const used = new Set();
+  const HOME = { r:R0+12, z:ZMAX+40 };
+  let st = {
+    motion:"G00", metric:true, feedMode:"G99", css:false,
+    r:HOME.r, z:HOME.z, feed:0, speed:0, tool:null, toolDef:{kind:'turn',name:'OD Turning'},
+    spindle:false, live:false, dir:0, coolant:false, ended:false,
+    sawM3:false, program:false
+  };
+
+  // ---- tokenizer + N-line map (used for G70/G71/G72 profile blocks) ----
+  function tok(raw){
+    const s=(raw||"").replace(/\(.*?\)/g," ").trim(); if(!s) return null;
+    const words=[]; const re=/([A-Z])(-?\d*\.?\d+)/g; let m; const up=s.toUpperCase();
+    while((m=re.exec(up))) words.push({a:m[1], v:parseFloat(m[2]), raw:m[0]});
+    if(!words.length) return null;
+    const has=a=>words.find(w=>w.a===a), val=a=>{const w=has(a);return w?w.v:undefined;};
+    return { words, has, val, gcodes:words.filter(w=>w.a==="G").map(w=>Math.round(w.v)) };
+  }
+  const nmap={};
+  lines.forEach((raw,li)=>{ const t=tok(raw); if(t&&t.has("N")) nmap[Math.round(t.val("N"))]=li; });
+  const skip=new Set();
+
+  // Carve the finish contour described by profile block N(pN)..N(qN).
+  // G0 in the block = position only; G1 = straight cut; G2/G3 = arc cut.
+  function carveBlock(pN,qN,cycLi){
+    const li0=nmap[pN], li1=nmap[qN];
+    if(li0===undefined||li1===undefined){
+      diag.push({block:cycLi,sev:"warn",msg:`Profile block N${pN}..N${qN} referenced by the cycle was not found.`}); return; }
+    for(let li=li0; li<=li1; li++) skip.add(li);
+    let lr=st.r, lz=st.z, lm=st.motion, lf=st.feed>0?st.feed:0.2;
+    for(let li=li0; li<=li1; li++){
+      const t=tok(lines[li]); if(!t) continue;
+      for(const g of t.gcodes){ if(g===0)lm="G00"; else if(g===1)lm="G01"; else if(g===2)lm="G02"; else if(g===3)lm="G03"; }
+      if(t.has("F")) lf=t.val("F");
+      if(!(t.has("X")||t.has("Z")||t.has("U")||t.has("W"))) continue;
+      let nr=lr, nz=lz;
+      if(t.has("X"))nr=t.val("X")/2; if(t.has("U"))nr=lr+t.val("U")/2;
+      if(t.has("Z"))nz=t.val("Z");   if(t.has("W"))nz=lz+t.val("W");
+      if(lm==="G00"){
+        segments.push({kind:"rapid", from:{r:lr,z:lz}, to:{r:nr,z:nz}, feed:0, spindleOn:st.spindle, block:li, speed:st.speed, tool:st.toolDef, safe:true});
+      } else if(lm==="G02"||lm==="G03"){
+        const pts=arcPoints({r:lr,z:lz},{r:nr,z:nz},
+          t.has("R")?{R:t.val("R"),cw:lm==="G02"}:{i:t.val("I")||0,k:t.val("K")||0,cw:lm==="G02"});
+        let pr=lr,pz=lz;
+        pts.forEach(p=>{ segments.push({kind:"feed", from:{r:pr,z:pz}, to:{r:p.r,z:p.z}, feed:lf, spindleOn:st.spindle, block:li, speed:st.speed, tool:st.toolDef}); pr=p.r; pz=p.z; });
+      } else {
+        segments.push({kind:"feed", from:{r:lr,z:lz}, to:{r:nr,z:nz}, feed:lf, spindleOn:st.spindle, block:li, speed:st.speed, tool:st.toolDef});
+      }
+      lr=nr; lz=nz;
+    }
+  }
+
+  lines.forEach((raw, li) => {
+    if(skip.has(li)) return;                       // profile-block line already carved by the cycle
+    let s = raw.replace(/\(.*?\)/g, " ").trim();   // strip comments
+    if(!s) return;
+    const words = [];
+    const re = /([A-Z])(-?\d*\.?\d+)/g; let m;
+    const up = s.toUpperCase();
+    while((m = re.exec(up))) words.push({ a:m[1], v:parseFloat(m[2]), raw:m[0] });
+    if(!words.length) return;
+
+    const has = a => words.find(w => w.a===a);
+    const val = a => { const w=has(a); return w?w.v:undefined; };
+    const gcodes = words.filter(w => w.a==="G").map(w => Math.round(w.v));
+    const mcodes = words.filter(w => w.a==="M").map(w => Math.round(w.v));
+    let homing = false, cyc = null, g7x = false;
+
+    if(has("O")) st.program = true;
+
+    // ---- G words (modal + one-shot) ----
+    for(const g of gcodes){
+      used.add("G"+String(g).padStart(2,"0"));
+      if(g===0) st.motion="G00";
+      else if(g===1) st.motion="G01";
+      else if(g===2) st.motion="G02";
+      else if(g===3) st.motion="G03";
+      else if(g===20){ st.metric=false; diag.push({block:li,sev:"warn",msg:"G20 (inch) set — the levels expect metric G21."}); }
+      else if(g===21){ st.metric=true; }
+      else if(g===28) homing=true;
+      else if(g===70||g===71||g===72){ g7x=true; }   // profile roughing/finishing cycles
+      else if(g===74){ cyc = has("Z") ? "drill"  : null; }
+      else if(g===75){ cyc = has("X") ? "groove" : null; }
+      else if(g===76){ cyc = has("X") ? "thread" : null; }
+      else if(g===96){ st.css=true; }
+      else if(g===97){ st.css=false; }
+      else if(g===98){ st.feedMode="G98"; }
+      else if(g===99){ st.feedMode="G99"; }
+      else if([17,18,19,40,41,42,43,49,50,53,54,55,56,57,58,59,90,91,92,94,95].includes(g)){ /* accepted */ }
+      else diag.push({block:li,sev:"warn",msg:`G${String(g).padStart(2,"0")} is not recognised by this simulator.`});
+    }
+
+    // ---- values ----
+    if(has("S")) st.speed = has("S").v;
+    if(has("F")) st.feed  = has("F").v;
+    if(has("T")){ st.tool = has("T").raw; st.toolDef = resolveTool(has("T").raw, LV); used.add("T"); }
+
+    // ---- G70/G71/G72 profile cycles ----
+    // On a cycle line the address words (U/W/R/P/Q) are parameters, NOT motion.
+    if(g7x){
+      if(has("P") && has("Q")) carveBlock(Math.round(val("P")), Math.round(val("Q")), li);
+      return;
+    }
+
+    // ---- M words ----
+    for(const mc of mcodes){
+      used.add("M"+String(mc).padStart(2,"0"));
+      if(mc===3){ st.spindle=true; st.dir=1; st.sawM3=true; if(st.speed<=0) diag.push({block:li,sev:"warn",msg:"M03 with no spindle speed set (add S____)."}); }
+      else if(mc===4){ st.spindle=true; st.dir=-1; st.sawM3=true; if(st.speed<=0) diag.push({block:li,sev:"warn",msg:"M04 with no spindle speed set (add S____)."}); }
+      else if(mc===5){ st.spindle=false; }
+      else if(mc===8){ st.coolant=true; }
+      else if(mc===9){ st.coolant=false; }
+      else if(mc===13||mc===14||mc===33||mc===34){ st.spindle=true; st.live=true; st.sawM3=true; } // live tool / C-axis on
+      else if(mc===30||mc===0||mc===1||mc===2){ st.ended=(mc===30||mc===2); }
+      else { /* accepted, not simulated */ }
+    }
+
+    // ---- CANNED CYCLES ----
+    if(cyc==="drill"){                              // G74 Z.. Q.. F..  peck drilling on centre
+      const zd=val("Z"); const from={r:st.r,z:st.z}, to={r:0,z:zd};
+      segments.push({kind:"feed", from, to, feed:st.feed, spindleOn:st.spindle, block:li, speed:st.speed,
+        tool:st.toolDef, cycle:"drill", drill:{dia:st.toolDef.dia||10, z:zd}});
+      st.r=0; st.z=zd; return;
+    }
+    if(cyc==="groove"){                             // G75 X.. Z.. ..   OD grooving / part-off
+      const xr=val("X")/2, zc=(val("Z")!==undefined?val("Z"):st.z);
+      const from={r:st.r,z:st.z}, to={r:xr,z:zc};
+      segments.push({kind:"feed", from, to, feed:st.feed, spindleOn:st.spindle, block:li, speed:st.speed,
+        tool:st.toolDef, cycle:"groove", groove:{r:xr, z:zc, width:st.toolDef.width||3}});
+      st.r=xr; st.z=zc; return;
+    }
+    if(cyc==="thread"){                             // G76 X(minor) Z(end) F(pitch)
+      const minor=val("X"), z1=val("Z"), pitch=(val("F")!==undefined?val("F"):st.feed);
+      const from={r:st.r,z:st.z}, to={r:minor/2,z:z1};
+      segments.push({kind:"feed", from, to, feed:pitch, spindleOn:st.spindle, block:li, speed:st.speed,
+        tool:st.toolDef, cycle:"thread", thread:{side:st.toolDef.side||'OD', z0:st.z, z1:z1, minorDia:minor, pitch:pitch}});
+      st.z=z1; return;
+    }
+
+    // ---- motion ----
+    const hasAxis = has("X")||has("Z")||has("U")||has("W")||has("C");
+    if(homing){
+      const from = { r:st.r, z:st.z };
+      segments.push({ kind:"rapid", from, to:{...HOME}, feed:0, spindleOn:st.spindle,
+        block:li, speed:st.speed, home:true, tool:st.toolDef });
+      st.r=HOME.r; st.z=HOME.z;
+    } else if(hasAxis){
+      let nr = st.r, nz = st.z;
+      if(has("X")) nr = has("X").v/2;              // diameter -> radius (absolute)
+      if(has("U")) nr = st.r + has("U").v/2;       // incremental diameter
+      if(has("Z")) nz = has("Z").v;                // absolute
+      if(has("W")) nz = st.z + has("W").v;         // incremental
+      const from = { r:st.r, z:st.z };
+      const to   = { r:nr,  z:nz };
+      const arc  = (st.motion==="G02"||st.motion==="G03");
+      const kind = (st.motion==="G01"||arc) ? "feed" : "rapid";
+      if(kind==="feed" && st.feed<=0 && st.toolDef.kind!=='mill')
+        diag.push({block:li,sev:"warn",msg:"Feed move with no feedrate F set."});
+      if(kind==="feed" && !st.spindle)
+        diag.push({block:li,sev:"err",msg:"Cutting with the spindle stopped — start it with M03 (or the live tool) first."});
+      if(arc){
+        if(!has("R") && !has("I") && !has("K"))
+          diag.push({block:li,sev:"warn",msg:`${st.motion} arc needs a radius (R) or centre (I,K) — treated as a straight line.`});
+        const pts=arcPoints(from,to,
+          has("R")?{R:val("R"),cw:st.motion==="G02"}:{i:val("I")||0,k:val("K")||0,cw:st.motion==="G02"});
+        let pr=st.r, pz=st.z;
+        pts.forEach(p=>{ segments.push({kind:"feed", from:{r:pr,z:pz}, to:{r:p.r,z:p.z}, feed:st.feed, spindleOn:st.spindle, block:li, speed:st.speed, tool:st.toolDef}); pr=p.r; pz=p.z; });
+      } else {
+        segments.push({ kind, from, to, feed:st.feed, spindleOn:st.spindle, block:li, speed:st.speed, tool:st.toolDef });
+      }
+      st.r=nr; st.z=nz;
+    }
+  });
+
+  return { segments, diag, used, final:st, lineCount: lines.length };
+}
+
+/* ============================================================
+   4. MATERIAL REMOVAL + SIMULATION
+   ============================================================ */
+// OUTER turning/facing: minimum radius along a move
+function removeAlongSeg(prof, aR, aZ, bR, bZ){
+  const dz = bZ-aZ, dr = bR-aR;
+  if(Math.abs(dz) < 1e-6){
+    if(Math.min(aR,bR) <= 0.05){ for(let j=0;j<N;j++) if(zAxis[j] > aZ + 1e-6) prof[j] = 0; }
+    else if(bR < aR){ const i = idxOf(aZ); if(bR < prof[i]) prof[i] = Math.max(bR,0); }
+    return;
+  }
+  // Sample the tool path at every z-grid point it crosses; the radius there is the
+  // exact surface value (avoids under-cutting where the tangent is steep, e.g. arc noses).
+  const zlo=Math.min(aZ,bZ), zhi=Math.max(aZ,bZ);
+  let i0=idxOf(Math.max(zlo,ZMIN)), i1=idxOf(Math.min(zhi,ZMAX));
+  if(i0>i1){ const tmp=i0; i0=i1; i1=tmp; }
+  for(let i=i0;i<=i1;i++){ const z=zAxis[i];
+    if(z<zlo-1e-9 || z>zhi+1e-9) continue;
+    const t=(z-aZ)/dz, r=aR+dr*t, rr=Math.max(r,0);
+    if(rr < prof[i]) prof[i] = rr;
+    if(r <= 0.02){ for(let j=0;j<N;j++) if(zAxis[j] > z) prof[j] = 0; }
+  }
+}
+// INNER boring: maximum inner radius along a move (only inside the part, z<=0)
+function boreAlongSeg(bore, aR, aZ, bR, bZ){
+  const dz=bZ-aZ, dr=bR-aR, dist=Math.hypot(dr,dz), steps=Math.max(2,Math.ceil(dist/0.08));
+  for(let s=0;s<=steps;s++){ const t=s/steps, r=aR+dr*t, z=aZ+dz*t;
+    if(z>0.001 || z<ZMIN-STEP) continue;
+    const i=idxOf(z), rr=Math.max(r,0);
+    if(rr>bore[i]) bore[i]=rr;
+  }
+}
+// DRILL on centre: bore = drill radius over the drilled length
+function drillBore(bore, dia, zDeep){
+  const rr=dia/2, z0=Math.min(zDeep,0);
+  for(let i=0;i<N;i++){ const z=zAxis[i]; if(z>=z0-1e-9 && z<=0.001){ if(rr>bore[i]) bore[i]=rr; } }
+}
+// OD groove: plunge to a radius over the tool width, centred on zc
+function grooveOuter(prof, zc, rBottom, w){
+  for(let i=0;i<N;i++){ const z=zAxis[i];
+    if(z>=zc-w/2 && z<=zc+w/2 && z<=0.001){ if(rBottom<prof[i]) prof[i]=Math.max(rBottom,0); } }
+}
+
+// Apply one segment's material effect to a state S={prof,bore,threads,slots,events,millDepth}
+function applySegment(S, seg){
+  const tk = seg.tool ? seg.tool.kind : 'turn';
+  if(seg.cycle==="drill"){ drillBore(S.bore, seg.drill.dia, seg.drill.z); return; }
+  if(seg.cycle==="groove"){ grooveOuter(S.prof, seg.groove.z, seg.groove.r, seg.groove.width); return; }
+  if(seg.cycle==="thread"){
+    const t=seg.thread, major = t.side==='ID' ? S.bore[idxOf(t.z1)]*2 : S.prof[idxOf(t.z1)]*2;
+    S.threads.push({side:t.side, z1:t.z1, majorDia:major, minorDia:t.minorDia, pitch:t.pitch, block:seg.block});
+    return;
+  }
+  if(tk==='mill'){
+    if(seg.kind==='feed' && seg.spindleOn){
+      const dz=seg.to.z-seg.from.z;
+      if(Math.abs(dz) < 1e-6){ S.millDepth = R0 - Math.min(seg.from.r, seg.to.r); }
+      else {
+        const depth = S.millDepth!=null ? S.millDepth : (R0 - seg.to.r);
+        S.slots.push({z0:Math.min(seg.from.z,seg.to.z), z1:Math.max(seg.from.z,seg.to.z),
+          depth, width:(seg.tool.dia||8), block:seg.block});
+      }
+    }
+    return;
+  }
+  if(seg.kind==="feed" && seg.spindleOn){
+    if(tk==='bore'){ boreAlongSeg(S.bore, seg.from.r,seg.from.z,seg.to.r,seg.to.z); }
+    else if(tk==='drill'){ drillBore(S.bore, (seg.tool.dia||10), seg.to.z); }
+    else {
+      if(Math.min(seg.from.z,seg.to.z) < ZMIN-0.01)
+        S.events.push({block:seg.block,sev:"err",msg:"Feed move runs past the stock into the chuck — crash."});
+      removeAlongSeg(S.prof, seg.from.r,seg.from.z,seg.to.r,seg.to.z);
+    }
+  } else if(seg.kind==="rapid" && !seg.safe){
+    const crash=rapidHitsStock(S.prof, seg, tk);
+    if(crash) S.events.push({block:seg.block,sev:"err",
+      msg:`Rapid (G00) drives the tool into Ø${(crash.r*2).toFixed(1)} stock at Z${crash.z.toFixed(1)} — crash.`});
+  }
+}
+
+// full clean simulation (used by Submit + final view)
+function simulate(segments){
+  const S={prof:new Array(N).fill(R0), bore:new Array(N).fill(0), threads:[], slots:[], events:[], millDepth:null};
+  for(const seg of segments) applySegment(S, seg);
+  return { prof:S.prof, bore:S.bore, threads:S.threads, slots:S.slots, events:S.events };
+}
+
+function rapidHitsStock(prof, seg, tk){
+  if(tk==='bore'||tk==='drill'||tk==='mill'||tk==='thread') return null;   // internal / live / thread tools travel on specialised paths
+  const {from,to} = seg;
+  const dz=to.z-from.z, dr=to.r-from.r, dist=Math.hypot(dr,dz), steps=Math.max(2,Math.ceil(dist/0.3));
+  for(let s=0;s<=steps;s++){
+    const t=s/steps, r=from.r+dr*t, z=from.z+dz*t;
+    if(z<ZMIN||z>ZMAX) continue;
+    const i=idxOf(z);
+    if(prof[i] > 0.05 && r < prof[i]-0.05){
+      if(i+1<N && prof[i+1] <= 0.05) continue;   // sitting at the just-faced end
+      return {r, z};
+    }
+  }
+  return null;
+}
+
+/* ============================================================
+   5. TARGET PROFILE + SCORING  (feature-based)
+   ============================================================ */
+/* ---- circular-arc geometry (shared by the interpreter and target builder) ----
+   Points are {r,z}; r = radius (X/2), z = axial. I,K are start->centre in (r,z).
+   Angle convention: a = atan2(r-cr, z-cz); G03 (CCW) increases a, G02 (CW) decreases. */
+function arcSweep(s,e,C,cw){
+  let a0=Math.atan2(s.r-C.r, s.z-C.z), a1=Math.atan2(e.r-C.r, e.z-C.z), da=a1-a0;
+  if(!cw){ if(da<=1e-9) da+=2*Math.PI; } else { if(da>=-1e-9) da-=2*Math.PI; }
+  return da;
+}
+function arcPoints(s,e,o){
+  let C;
+  const cw=!!o.cw;
+  if(o.i!==undefined || o.k!==undefined){
+    C={ r:s.r+(o.i||0), z:s.z+(o.k||0) };
+  } else if(o.R!==undefined && isFinite(o.R)){
+    const R=Math.abs(o.R);
+    const mz=(s.z+e.z)/2, mr=(s.r+e.r)/2, dz=e.z-s.z, dr=e.r-s.r, d=Math.hypot(dz,dr)||1e-6;
+    let h2=R*R-(d/2)*(d/2); if(h2<0)h2=0; const h=Math.sqrt(h2);
+    const uz=-dr/d, ur=dz/d;                          // unit perpendicular
+    const c1={z:mz+uz*h, r:mr+ur*h}, c2={z:mz-uz*h, r:mr-ur*h};
+    const minor=o.R>0;
+    const s1=Math.abs(arcSweep(s,e,c1,cw)), s2=Math.abs(arcSweep(s,e,c2,cw));
+    C = minor ? (s1<=s2?c1:c2) : (s1>s2?c1:c2);
+  } else {
+    return [{r:e.r,z:e.z}];                            // no radius/centre → straight fallback
+  }
+  const R=Math.hypot(s.r-C.r, s.z-C.z), da=arcSweep(s,e,C,cw);
+  const steps=Math.max(6, Math.ceil(Math.abs(da)/(Math.PI/90)));
+  const pts=[];
+  for(let i=1;i<=steps;i++){ const a=a0start(s,C)+da*(i/steps);
+    pts.push({ z:C.z+R*Math.cos(a), r:C.r+R*Math.sin(a) }); }
+  return pts;
+}
+function a0start(s,C){ return Math.atan2(s.r-C.r, s.z-C.z); }
+// expand a target polyline: any point carrying .arc {i,k | R, cw} becomes a tessellated arc
+function expandProfile(P){
+  const out=[{z:P[0].z, dia:P[0].dia}];
+  for(let k=1;k<P.length;k++){
+    const a=P[k-1], b=P[k];
+    if(b.arc){
+      const pts=arcPoints({r:a.dia/2,z:a.z}, {r:b.dia/2,z:b.z},
+        b.arc.R!==undefined ? {R:b.arc.R, cw:b.arc.cw} : {i:b.arc.i||0, k:b.arc.k||0, cw:b.arc.cw});
+      pts.forEach(p=>out.push({z:p.z, dia:p.r*2}));
+    } else out.push({z:b.z, dia:b.dia});
+  }
+  return out;
+}
+
+function buildProfileArray(Praw){
+  const P=expandProfile(Praw);
+  const t=new Array(N).fill(0);
+  for(let k=0;k<P.length-1;k++){
+    const p1=P[k],p2=P[k+1];
+    if(Math.abs(p1.z-p2.z)<1e-6) continue;          // vertical edge
+    const zlo=Math.min(p1.z,p2.z), zhi=Math.max(p1.z,p2.z);
+    for(let i=0;i<N;i++){ const z=zAxis[i];
+      if(z>=zlo-1e-9 && z<=zhi+1e-9){ const f=(z-p1.z)/(p2.z-p1.z); t[i]=(p1.dia+(p2.dia-p1.dia)*f)/2; } }
+  }
+  return t;
+}
+let TARGET_BORE=null;
+function buildTarget(level){
+  const P=level.target.profile; const vEdges=[0];
+  for(let k=0;k<P.length-1;k++) if(Math.abs(P[k].z-P[k+1].z)<1e-6) vEdges.push(P[k].z);
+  edges=vEdges;
+  TARGET_BORE = level.target.bore ? buildProfileArray(level.target.bore) : null;
+  return buildProfileArray(P);
+}
+
+function scoreOuter(prof, target){
+  const tol=LV.tolerance, guard=0.6;
+  let excess=0,gouge=0,exAt=null,goAt=null,faceLeft=0,faceAt=null;
+  const nearEdge=z=>edges.some(e=>Math.abs(z-e)<guard);
+  for(let i=0;i<N;i++){ const z=zAxis[i];
+    if(z>0.001){ if(prof[i]>tol && prof[i]>faceLeft){faceLeft=prof[i];faceAt=z;} continue; }
+    if(nearEdge(z)) continue;
+    const d=prof[i]-target[i];
+    if(d>excess){excess=d;exAt=z;}
+    if(-d>gouge){gouge=-d;goAt=z;}
+  }
+  return {excess,gouge,exAt,goAt,faceLeft,faceAt,pass:excess<=tol&&gouge<=tol&&faceLeft<=tol};
+}
+function scoreBore(bore, target){
+  const tol=LV.tolerance;
+  let tooSmall=0,tooBig=0,smAt=null,bgAt=null;
+  for(let i=0;i<N;i++){ const z=zAxis[i]; if(z>0.001) continue;
+    if(i>0 && Math.abs(target[i]-target[i-1])>1.5) continue;   // guard bore step
+    const tg=target[i]; if(tg<=0.001 && bore[i]<=0.001) continue;
+    const d=bore[i]-tg;
+    if(-d>tooSmall){tooSmall=-d;smAt=z;}
+    if(d>tooBig){tooBig=d;bgAt=z;}
+  }
+  return {tooSmall,tooBig,smAt,bgAt,pass:tooSmall<=tol&&tooBig<=tol};
+}
+function scoreThreads(actual, want){
+  const msgs=[]; let pass=true;
+  want.forEach(w=>{
+    const a=actual.find(x=>x.side===w.side);
+    if(!a){ pass=false; msgs.push(`No ${w.side} thread cut — call <code class='i'>G76</code> with the ${w.side} threading tool.`); return; }
+    if(Math.abs((a.pitch||0)-w.pitch)>0.02){ pass=false; msgs.push(`${w.side} thread pitch is ${a.pitch}, needs ${w.pitch} mm (the F word / lead).`); }
+    if(Math.abs((a.minorDia||0)-w.minorDia)>0.4){ pass=false; msgs.push(`${w.side} thread cut to Ø${(a.minorDia||0).toFixed(2)} minor, needs ~Ø${w.minorDia} (G76 X).`); }
+    if(Math.abs((a.z1||0)-w.z1)>1.0){ pass=false; msgs.push(`${w.side} thread ends at Z${(a.z1||0).toFixed(1)}, needs Z${w.z1}.`); }
+  });
+  return {pass, msgs};
+}
+function scoreSlots(actual, want){
+  const msgs=[]; let pass=true;
+  want.forEach(w=>{
+    const a=actual.find(x=>Math.abs(((x.z0+x.z1)/2)-((w.z0+w.z1)/2))<8) || actual[0];
+    if(!a){ pass=false; msgs.push("No keyslot milled — turn on the live tool and feed along Z at depth."); return; }
+    if(Math.abs(a.depth-w.depth)>0.6){ pass=false; msgs.push(`Keyslot depth ${a.depth.toFixed(2)} mm, needs ${w.depth} mm.`); }
+    const alen=Math.abs(a.z1-a.z0), wlen=Math.abs(w.z1-w.z0);
+    if(Math.abs(alen-wlen)>1.5){ pass=false; msgs.push(`Keyslot length ${alen.toFixed(1)} mm, needs ${wlen} mm.`); }
+  });
+  return {pass, msgs};
+}
+function score(sim, level){
+  const outer=scoreOuter(sim.prof, TARGET);
+  const bore = level.target.bore ? scoreBore(sim.bore, TARGET_BORE) : null;
+  const thread = level.target.threads ? scoreThreads(sim.threads, level.target.threads) : null;
+  const slot = level.target.slots ? scoreSlots(sim.slots, level.target.slots) : null;
+  const pass = outer.pass && (!bore||bore.pass) && (!thread||thread.pass) && (!slot||slot.pass);
+  return { pass, tol:level.tolerance, outer, bore, thread, slot,
+    excess:outer.excess, gouge:outer.gouge, exAt:outer.exAt, goAt:outer.goAt,
+    faceLeft:outer.faceLeft, faceAt:outer.faceAt };
+}
+
+/* ============================================================
+   6. CODE COACH  (right/wrong + "what to write instead")
+   ============================================================ */
+function coach(code, interp, sim, sc, level){
+  const hardErrs=[], warns=[], tips=[], goods=[];
+  const U = interp.used, txt = code.toUpperCase();
+  // errors / warnings from interpreter + sim (crashes, spindle-off cuts, etc.)
+  const seen = new Set();
+  [...interp.diag, ...sim.events].forEach(d=>{
+    const key=d.sev+d.msg; if(seen.has(key)) return; seen.add(key);
+    const item=lineTag(d.block)+d.msg;
+    if(d.sev==="err") hardErrs.push(item);
+    else if(d.sev==="warn") warns.push(item);
+  });
+  // structural checks
+  if(!interp.final.program) tips.push("Start the program with a number, e.g. <code class='i'>O0001</code>.");
+  if(!U.has("G21")) tips.push("Declare metric up front with <code class='i'>G21</code> so units are never ambiguous.");
+  if(!interp.final.sawM3) hardErrs.push("Spindle is never started — add <code class='i'>M03 S____</code> before any cut.");
+  else goods.push("Spindle started before cutting.");
+  const feedMoves = interp.segments.filter(s=>s.kind==="feed");
+  if(feedMoves.length && feedMoves.every(s=>s.feed>0)) goods.push("Every cutting move has a feedrate.");
+  if(!/M0?5/.test(txt)) tips.push("Stop the spindle with <code class='i'>M05</code> before ending.");
+  else goods.push("Spindle stopped at the end (M05).");
+  if(!U.has("G28")) tips.push("Send the turret home with <code class='i'>G28 U0 W0</code> before finishing.");
+  if(!/M30/.test(txt)) tips.push("End the program with <code class='i'>M30</code> (end + rewind).");
+  else goods.push("Program ends cleanly with M30.");
+  if(!/\(/.test(code)) tips.push("Comment your tools and operations in <code class='i'>( )</code> — future-you will thank you.");
+  else goods.push("Program is commented.");
+  if(U.has("G96")) goods.push("Constant surface speed (G96) — professional finish control.");
+  else if(U.has("G97")) goods.push("Fixed rpm (G97) — the right choice for drilling, threading and grooving.");
+  else tips.push("Set a spindle mode: <code class='i'>G96</code> (turning) or <code class='i'>G97</code> (drilling/threading).");
+  if(!/M0?8/.test(txt)) tips.push("Turn coolant on with <code class='i'>M08</code> for the cut.");
+  else goods.push("Coolant on for the cut (M08).");
+  if(!interp.final.tool) tips.push("Call a tool + offset, e.g. <code class='i'>T0101</code>.");
+
+  const accepted = sc.pass && hardErrs.length===0;
+  const professional = accepted && warns.length===0 && tips.length===0 &&
+    interp.final.program && U.has("G21") && interp.final.sawM3;
+  return { hardErrs, warns, tips, goods, accepted, professional };
+}
+function lineTag(b){ return `<b>N${b+1}</b> — `; }
+
+/* ============================================================
+   7. TECHNICAL DRAWING (SVG from target.profile)
+   ============================================================ */
+function renderDrawing(level){
+  const P = level.target.profile;
+  const zs = P.map(p=>p.z), ds = P.map(p=>p.dia);
+  const zMinP=Math.min(...zs), zMaxP=Math.max(...zs, 0);
+  const dMax=Math.max(...ds);
+  const W=430, H=250, padX=46, padTop=44, padBot=70;
+  const plotW=W-padX*2, plotH=H-padTop-padBot;
+  const sx = z => padX + (z - zMinP)/(zMaxP - zMinP) * plotW;
+  const cy = padTop + plotH/2;
+  const sy = r => cy - r/(dMax/2) * (plotH/2);   // radius -> y (up)
+
+  // upper outline points
+  let up=[], lo=[];
+  P.forEach(p=>{ up.push([sx(p.z), sy(p.dia/2)]); lo.push([sx(p.z), sy(-p.dia/2)]); });
+  const outline = "M"+up.map(p=>p.join(",")).join(" L") +
+                  " L"+lo.slice().reverse().map(p=>p.join(",")).join(" L")+" Z";
+
+  // dimensions: one diameter per distinct horizontal segment, lengths along bottom
+  let dims="";
+  // diameters (right side vertical measure for each level of the profile)
+  const segDia=[];
+  for(let k=0;k<P.length-1;k++){
+    if(Math.abs(P[k].z-P[k+1].z)>1e-6 && Math.abs(P[k].dia-P[k+1].dia)<1e-6){
+      segDia.push({dia:P[k].dia, z0:P[k].z, z1:P[k+1].z});
+    }
+  }
+  segDia.forEach((sg)=>{
+    const zx = sx((sg.z0+sg.z1)/2);
+    const yT=sy(sg.dia/2), yB=sy(-sg.dia/2);
+    dims += `<line class="bp-dim" x1="${zx}" y1="${yT}" x2="${zx}" y2="${yB}"/>`+
+            arrow(zx,yT,0,1)+arrow(zx,yB,0,-1)+
+            `<rect x="${zx-20}" y="${cy-9}" width="40" height="18" fill="#f5f8f9"/>`+
+            `<text class="dimb" x="${zx}" y="${cy+4}" text-anchor="middle">Ø${sg.dia}</text>`;
+  });
+  // lengths (turned length from face)
+  const turnZ = Math.min(...segDia.filter(s=>s.dia===Math.min(...segDia.map(x=>x.dia))).map(s=>Math.min(s.z0,s.z1)));
+  if(isFinite(turnZ) && turnZ<0){
+    const y=sy(-dMax/2)-24, x0=sx(0), x1=sx(turnZ);
+    dims += `<line class="bp-ext" x1="${x0}" y1="${sy(-dMax/2)}" x2="${x0}" y2="${y-6}"/>`+
+            `<line class="bp-ext" x1="${x1}" y1="${sy(-dMax/2)}" x2="${x1}" y2="${y-6}"/>`+
+            `<line class="bp-dim" x1="${x0}" y1="${y}" x2="${x1}" y2="${y}"/>`+
+            arrow(x0,y,-1,0)+arrow(x1,y,1,0)+
+            `<text class="dim" x="${(x0+x1)/2}" y="${y-5}" text-anchor="middle">${Math.abs(turnZ)}</text>`;
+  }
+
+  // ---- feature callouts: bore (dashed hidden lines), threads, keyslots ----
+  let featSvg="";
+  if(level.target.bore){
+    const B=level.target.bore; let ut=[], lt=[];
+    B.forEach(p=>{ if(p.dia>0){ ut.push([sx(p.z), sy(p.dia/2)].join(",")); lt.push([sx(p.z), sy(-p.dia/2)].join(",")); }});
+    if(ut.length){
+      featSvg += `<polyline class="bp-cl" style="stroke-dasharray:5 3" fill="none" points="${ut.join(" ")}"/>`+
+                 `<polyline class="bp-cl" style="stroke-dasharray:5 3" fill="none" points="${lt.join(" ")}"/>`;
+      const bmax=Math.max(...B.map(p=>p.dia));
+      featSvg += `<text class="dim" x="${sx(0)-4}" y="${cy+3}" text-anchor="end">Ø${bmax} bore</text>`;
+    }
+  }
+  (level.target.threads||[]).forEach(t=>{
+    const maj=t.majorDia||(t.minorDia+2);
+    featSvg += `<text class="dimb" x="${sx((0+t.z1)/2)}" y="${sy(maj/2)-6}" text-anchor="middle">M${maj}×${t.pitch}${t.side==='ID'?' ID':''}</text>`;
+  });
+  (level.target.slots||[]).forEach(s=>{
+    const x0=sx(s.z0), x1=sx(s.z1), yt=sy(dMax/2);
+    featSvg += `<rect x="${Math.min(x0,x1)}" y="${yt-7}" width="${Math.abs(x1-x0)}" height="7" fill="#dce7eb" stroke="#3c4d56" stroke-width="1"/>`+
+               `<text class="dim" x="${(x0+x1)/2}" y="${yt-10}" text-anchor="middle">keyslot</text>`;
+  });
+
+  const svg =
+   `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Target part drawing">
+      <path class="bp-fill bp-line" d="${outline}"/>
+      ${featSvg}
+      <line class="bp-cl" x1="${padX-16}" y1="${cy}" x2="${W-padX+18}" y2="${cy}"/>
+      <text class="dim" x="${sx(0)}" y="${padTop-14}" text-anchor="middle">Z0</text>
+      <line class="bp-ext" x1="${sx(0)}" y1="${padTop-10}" x2="${sx(0)}" y2="${sy(dMax/2)-4}"/>
+      ${dims}
+    </svg>`;
+  document.getElementById("drawing").innerHTML = svg;
+  let extra="";
+  if(level.target.bore){ extra+=` · bore Ø${Math.max(...level.target.bore.map(p=>p.dia))}`; }
+  if(level.target.threads){ extra+=" · "+level.target.threads.map(t=>`${(t.majorDia||t.minorDia+2)}×${t.pitch} ${t.side} thread`).join(", "); }
+  if(level.target.slots){ extra+=" · keyslot "+level.target.slots.map(s=>`${Math.abs(s.z1-s.z0)}×${s.depth}mm`).join(", "); }
+  document.getElementById("draw-note").innerHTML =
+    `Stock: Ø${level.stock.diameter} × ${level.stock.length} mm · ${level.stock.material}${extra}. Dimensions in mm. Tol ±${level.tolerance} mm.`;
+}
+function arrow(x,y,dx,dy){
+  const s=5;
+  if(dy!==0){ const d=dy>0?1:-1; return `<path class="bp-dim" fill="var(--steel)" d="M${x},${y} l-3,${-d*s} l6,0 Z"/>`; }
+  const d=dx>0?1:-1; return `<path class="bp-dim" fill="var(--steel)" d="M${x},${y} l${-d*s},-3 l0,6 Z"/>`;
+}
+
+/* ============================================================
+   8. CANVAS RENDERER + PLAYBACK
+   ============================================================ */
+const cv=document.getElementById("stage"), ctx=cv.getContext("2d");
+let view={};
+function computeView(){
+  const W=cv.width, H=cv.height;
+  const zLo=ZMIN-6, zHi=ZMAX+10;
+  const Rmax=R0*1.35+6;
+  const padL=70, padR=30, padV=34;
+  view.mz = z => padL + (z-zLo)/(zHi-zLo)*(W-padL-padR);
+  view.cy = H/2;
+  view.mr = r => view.cy - r*((H/2-padV)/Rmax);
+  view.Rmax=Rmax; view.W=W; view.H=H; view.padL=padL;
+}
+
+let play={ prof:null, bore:null, threads:[], slots:[], events:[], millDepth:null,
+           segIdx:0, t:0, running:false, done:false, tool:null, spin:0, blockActive:-1 };
+let SEGMENTS=[];
+
+function resetPlay(rebuild){
+  if(rebuild){ const r=interpret(getCode()); SEGMENTS=r.segments; INTERP=r; }
+  play.prof=new Array(N).fill(R0); play.bore=new Array(N).fill(0);
+  play.threads=[]; play.slots=[]; play.events=[]; play.millDepth=null;
+  play.segIdx=0; play.t=0; play.running=false; play.done=false;
+  play.tool = SEGMENTS.length? {...SEGMENTS[0].from} : {r:R0+12,z:ZMAX+40};
+  play.blockActive=-1;
+  setStatus("READY"); setPlayLabel(false);
+  drawFrame();
+}
+
+function stepSegment(){
+  if(play.segIdx>=SEGMENTS.length){ play.done=true; return false; }
+  const seg=SEGMENTS[play.segIdx];
+  applySegment(play, seg);
+  play.tool={...seg.to};
+  play.blockActive=seg.block;
+  play.segIdx++; play.t=0;
+  return true;
+}
+
+let raf=null;
+function loop(){
+  if(!play.running){ return; }
+  const spd=+document.getElementById("speed").value;
+  if(play.segIdx>=SEGMENTS.length){ finishPlay(); return; }
+  const seg=SEGMENTS[play.segIdx];
+  play.blockActive=seg.block;
+  const dz=seg.to.z-seg.from.z, dr=seg.to.r-seg.from.r;
+  const dist=Math.max(0.001, Math.hypot(dz,dr));
+  const perFrame = (seg.kind==="rapid"? 6:1.6)*spd;   // mm along path per frame
+  play.t += perFrame/dist;
+  if(play.t>=1) play.t=1;
+  const cr=seg.from.r+dr*play.t, czp=seg.from.z+dz*play.t;
+  play.tool={r:cr,z:czp};
+  // progressive outer turning for a smooth cut; other ops apply on completion
+  const tk=seg.tool?seg.tool.kind:'turn';
+  if(seg.kind==="feed" && seg.spindleOn && !seg.cycle && tk==='turn' && Math.abs(dz)>=1e-6)
+    removeAlongSeg(play.prof, seg.from.r,seg.from.z, cr,czp);
+  if(seg.spindleOn) play.spin+=0.4;
+  if(play.t>=1){ applySegment(play, seg); play.segIdx++; play.t=0; }
+  drawFrame();
+  raf=requestAnimationFrame(loop);
+}
+function finishPlay(){ play.running=false; play.done=true; setStatus("PROGRAM END"); setPlayLabel(false); drawFrame(); }
+
+function drawFrame(){
+  computeView();
+  const W=view.W,H=view.H;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle="#ffffff"; ctx.fillRect(0,0,W,H);
+  // subtle grid
+  ctx.strokeStyle="rgba(20,40,55,.05)"; ctx.lineWidth=1;
+  for(let gx=0;gx<W;gx+=26){ ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,H);ctx.stroke(); }
+  for(let gy=0;gy<H;gy+=26){ ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(W,gy);ctx.stroke(); }
+
+  // centreline
+  ctx.strokeStyle="#aab4ba"; ctx.setLineDash([10,4,3,4]); ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(view.mz(ZMIN-6),view.cy);ctx.lineTo(view.mz(ZMAX+8),view.cy);ctx.stroke();
+  ctx.setLineDash([]);
+
+  drawChuck();
+  drawTargetGhost();
+  drawStock();
+  drawThreads();
+  drawSlots();
+  drawAxes();
+  drawTool();
+  updateDRO();
+}
+
+function drawChuck(){
+  const x=view.mz(ZMIN), xg=view.mz(ZMIN-6);
+  const yT=view.mr(R0+5), yB=view.mr(-(R0+5));
+  ctx.fillStyle="#d3dce0"; ctx.strokeStyle="#aab8bf"; ctx.lineWidth=2;
+  ctx.fillRect(xg-18, yT, (x-xg)+18, yB-yT);
+  ctx.strokeRect(xg-18, yT, (x-xg)+18, yB-yT);
+  // jaw steps
+  ctx.fillStyle="#bcc9cf";
+  ctx.fillRect(x-14, view.mr(R0+5), 16, view.mr(R0-3)-view.mr(R0+5));
+  ctx.fillRect(x-14, view.mr(-(R0-3)), 16, view.mr(-(R0+5))-view.mr(-(R0-3)));
+  ctx.fillStyle="#5f7078"; ctx.font="10px 'JetBrains Mono',monospace"; ctx.textAlign="center";
+  ctx.fillText("CHUCK", (xg-18+x)/2, view.cy+3);
+}
+
+function drawStock(){
+  const p=play.prof||new Array(N).fill(R0);
+  // ---- solid outer body ----
+  ctx.beginPath();
+  ctx.moveTo(view.mz(zAxis[0]), view.mr(p[0]));
+  for(let i=1;i<N;i++) ctx.lineTo(view.mz(zAxis[i]), view.mr(p[i]));
+  for(let i=N-1;i>=0;i--) ctx.lineTo(view.mz(zAxis[i]), view.mr(-p[i]));
+  ctx.closePath();
+  const grad=ctx.createLinearGradient(0,view.mr(R0),0,view.mr(-R0));
+  grad.addColorStop(0,"#2b333a"); grad.addColorStop(.5,"#3c474e"); grad.addColorStop(1,"#1e252b");
+  ctx.fillStyle=grad; ctx.fill();
+  ctx.strokeStyle="#11161a"; ctx.lineWidth=1.5; ctx.stroke();
+  // spin hint lines (clipped to the metal)
+  if(play.running){
+    ctx.save(); ctx.clip();
+    ctx.strokeStyle="rgba(255,255,255,.13)"; ctx.lineWidth=1;
+    const spacing=16, off=(play.spin*6)%spacing;
+    for(let x=view.mz(ZMIN)+off; x<view.mz(ZMAX); x+=spacing){
+      ctx.beginPath();ctx.moveTo(x,view.mr(R0));ctx.lineTo(x,view.mr(-R0));ctx.stroke();
+    }
+    ctx.restore();
+  }
+  // ---- hollow the bore (drilled / bored hole) ----
+  const b=play.bore;
+  if(b && b.some(v=>v>0.05)){
+    const idxs=[]; for(let i=0;i<N;i++) if(zAxis[i]<=0.001 && b[i]>0.02) idxs.push(i);
+    if(idxs.length){
+      ctx.beginPath();
+      idxs.forEach((i,k)=>{ const x=view.mz(zAxis[i]),y=view.mr(b[i]); k?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+      for(let k=idxs.length-1;k>=0;k--){ const i=idxs[k]; ctx.lineTo(view.mz(zAxis[i]), view.mr(-b[i])); }
+      ctx.closePath();
+      ctx.fillStyle="#ffffff"; ctx.fill();
+      ctx.strokeStyle="#11161a"; ctx.lineWidth=1.2; ctx.stroke();
+    }
+  }
+}
+
+function drawThreads(){
+  (play.threads||[]).forEach(t=>{
+    const zlo=Math.min(0,t.z1), zhi=Math.max(0,t.z1);
+    const rSurf=(t.majorDia||t.minorDia+2)/2;
+    const p=Math.max(t.pitch||1.5, 0.8);
+    ctx.strokeStyle="rgba(255,255,255,.55)"; ctx.lineWidth=1;
+    for(let z=zlo; z<zhi; z+=p){
+      const teeth=0.9*p*0.55;
+      ctx.beginPath();
+      ctx.moveTo(view.mz(z), view.mr(rSurf));
+      ctx.lineTo(view.mz(z+p/2), view.mr(rSurf-teeth));
+      ctx.lineTo(view.mz(Math.min(z+p,zhi)), view.mr(rSurf)); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(view.mz(z), view.mr(-rSurf));
+      ctx.lineTo(view.mz(z+p/2), view.mr(-(rSurf-teeth)));
+      ctx.lineTo(view.mz(Math.min(z+p,zhi)), view.mr(-rSurf)); ctx.stroke();
+    }
+    ctx.fillStyle="#b0761c"; ctx.font="10px 'JetBrains Mono',monospace"; ctx.textAlign="center";
+    ctx.fillText(`${t.side} THREAD · P${t.pitch}`, view.mz((zlo+zhi)/2), view.mr(rSurf)-8);
+  });
+}
+
+function drawSlots(){
+  const slots=play.slots||[];
+  slots.forEach(s=>{
+    const x0=view.mz(s.z0), x1=view.mz(s.z1);
+    const yTop=view.mr(R0), yBot=view.mr(R0 - s.depth);
+    ctx.fillStyle="#ffffff"; ctx.fillRect(Math.min(x0,x1), yTop, Math.abs(x1-x0), yBot-yTop);
+    ctx.strokeStyle="#11161a"; ctx.lineWidth=1.1; ctx.strokeRect(Math.min(x0,x1), yTop, Math.abs(x1-x0), yBot-yTop);
+    ctx.fillStyle="#b0761c"; ctx.font="10px 'JetBrains Mono',monospace"; ctx.textAlign="center";
+    ctx.fillText("KEYSLOT", (x0+x1)/2, yBot-5);
+  });
+  if(slots.length) drawEndView(slots[0]);
+}
+function drawEndView(s){
+  const cx=view.W-64, cy=62, rr=32;
+  // light inset panel
+  ctx.fillStyle="rgba(255,255,255,.92)"; ctx.strokeStyle="#c3ced3"; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(cx,cy,rr+9,0,7); ctx.fill(); ctx.stroke();
+  // dark round bar cross-section
+  ctx.fillStyle="#2f383f"; ctx.strokeStyle="#11161a"; ctx.lineWidth=1.4;
+  ctx.beginPath(); ctx.arc(cx,cy,rr,0,7); ctx.fill(); ctx.stroke();
+  // white keyslot notch
+  const w=Math.max(5,(s.width/R0)*rr), dep=Math.min(rr,(s.depth/R0)*rr);
+  ctx.fillStyle="#ffffff"; ctx.strokeStyle="#11161a"; ctx.lineWidth=1.1;
+  ctx.fillRect(cx-w/2, cy-rr, w, dep); ctx.strokeRect(cx-w/2, cy-rr, w, dep);
+  ctx.fillStyle="#5f7078"; ctx.font="9px 'JetBrains Mono',monospace"; ctx.textAlign="center";
+  ctx.fillText("END VIEW", cx, cy+rr+15);
+}
+
+function drawTargetGhost(){
+  if(!TARGET) return;
+  ctx.strokeStyle="rgba(40,95,120,.5)"; ctx.setLineDash([5,4]); ctx.lineWidth=1.3;
+  ctx.beginPath();
+  let started=false;
+  for(let i=0;i<N;i++){ if(TARGET[i]<=0) continue;
+    const x=view.mz(zAxis[i]), y=view.mr(TARGET[i]);
+    if(!started){ctx.moveTo(x,y);started=true;} else ctx.lineTo(x,y); }
+  ctx.stroke();
+  ctx.beginPath(); started=false;
+  for(let i=0;i<N;i++){ if(TARGET[i]<=0) continue;
+    const x=view.mz(zAxis[i]), y=view.mr(-TARGET[i]);
+    if(!started){ctx.moveTo(x,y);started=true;} else ctx.lineTo(x,y); }
+  ctx.stroke(); ctx.setLineDash([]);
+}
+
+function drawAxes(){
+  const ox=view.mz(0), oy=view.cy;
+  ctx.strokeStyle="#4fa3bd"; ctx.fillStyle="#7fc4d6"; ctx.lineWidth=1.4;
+  ctx.font="12px 'JetBrains Mono',monospace";
+  // Z+ to the right
+  line(ox,oy, ox+70,oy); tri(ox+70,oy,1,0,"#4fa3bd");
+  ctx.textAlign="left"; ctx.fillText("Z+", ox+74, oy+4);
+  // X+ up
+  line(ox,oy, ox,oy-64); tri(ox,oy-64,0,-1,"#4fa3bd");
+  ctx.fillText("X+", ox+5, oy-62);
+  function line(x1,y1,x2,y2){ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}
+}
+function tri(x,y,dx,dy,c){ ctx.fillStyle=c; ctx.beginPath();
+  if(dx){ctx.moveTo(x,y);ctx.lineTo(x-8*dx,y-4);ctx.lineTo(x-8*dx,y+4);}
+  else{ctx.moveTo(x,y);ctx.lineTo(x-4,y-8*dy);ctx.lineTo(x+4,y-8*dy);}
+  ctx.closePath();ctx.fill(); }
+
+function drawTool(){
+  const t=play.tool; if(!t) return;
+  let tz=Math.max(ZMIN-6,Math.min(ZMAX+8,t.z));
+  let tr=Math.max(-2,Math.min(view.Rmax,t.r));
+  const x=view.mz(tz), y=view.mr(tr);
+  // tool comes from the top (turret above)
+  const turW=34, turH=22, holderW=12;
+  ctx.fillStyle="#c9995a"; ctx.strokeStyle="#8a6a34"; ctx.lineWidth=1.5;
+  ctx.fillRect(x-turW/2, view.mr(view.Rmax)-6, turW, turH);
+  ctx.strokeRect(x-turW/2, view.mr(view.Rmax)-6, turW, turH);
+  ctx.fillStyle="#6d8a95"; ctx.font="9px 'JetBrains Mono',monospace"; ctx.textAlign="center";
+  ctx.fillText("TURRET", x, view.mr(view.Rmax)+9);
+  // holder shaft down to just above tip
+  ctx.fillStyle="#9fb0b8"; ctx.strokeStyle="#6d7f88";
+  ctx.fillRect(x-holderW/2, view.mr(view.Rmax)-6+turH, holderW, (y-14)-(view.mr(view.Rmax)-6+turH));
+  ctx.strokeRect(x-holderW/2, view.mr(view.Rmax)-6+turH, holderW, (y-14)-(view.mr(view.Rmax)-6+turH));
+  // insert (triangle tip pointing down to workpiece)
+  ctx.fillStyle="#e9edf0"; ctx.strokeStyle="#2b3940"; ctx.lineWidth=1.4;
+  ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-9,y-15); ctx.lineTo(x+9,y-15); ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  // spark when cutting
+  const seg=SEGMENTS[Math.min(play.segIdx,SEGMENTS.length-1)];
+  if(play.running && seg && seg.kind==="feed" && seg.spindleOn && tr>0 && tr<=R0+0.5){
+    ctx.fillStyle="rgba(224,176,106,.9)";
+    for(let s=0;s<4;s++){ ctx.beginPath();
+      ctx.arc(x+(Math.random()-0.5)*10, y+(Math.random()*6), 1.2, 0, 7); ctx.fill(); }
+  }
+}
+
+function updateDRO(){
+  const t=play.tool||{r:R0,z:0};
+  const st=INTERP? INTERP.final:null;
+  const seg=SEGMENTS[Math.min(play.segIdx,SEGMENTS.length-1)];
+  const spinOn = seg? seg.spindleOn : (st&&st.spindle);
+  const css = st&&st.css, fmode = st? st.feedMode : "G99";
+  const tool = st&&st.tool ? st.tool : "----";
+  const fmt = v => (v<0?"-":" ")+Math.abs(v).toFixed(3);
+  const el=document.getElementById("dro");
+  el.innerHTML =
+    `<div class="hd">Actual Position (Absolute)</div>`+
+    `<div class="big">X <b>${fmt(t.r*2)}</b></div>`+
+    `<div class="big">Z <b>${fmt(t.z)}</b></div>`+
+    `<div class="sep"></div>`+
+    `<div><span class="rowlbl">F</span> <b>${seg?(+seg.feed).toFixed(2):"0.00"}</b>  `+
+      `<span class="rowlbl">S</span> <b>${seg?seg.speed:0}</b>  `+
+      `<span class="rowlbl">T</span> <b>${tool}</b></div>`+
+    `<div><span class="off">${css?'G96':'G97'} ${fmode}</span>  `+
+      `SPIN <span class="${spinOn?'on':'off'}">${spinOn?'●':'○'}</span>  `+
+      `COOL <span class="${(st&&st.coolant)?'on':'off'}">${(st&&st.coolant)?'●':'○'}</span></div>`;
+}
+
+/* ============================================================
+   9. UI WIRING + SUBMIT
+   ============================================================ */
+let INTERP=null, TARGET=null;
+const getCode=()=>document.getElementById("code").value;
+function setStatus(s){ document.getElementById("sim-status").textContent=s; }
+function setPlayLabel(running){
+  document.getElementById("play-label").textContent = running?"Pause":"Play";
+}
+
+function syncGutter(){
+  const code=getCode(); const lines=code.split("\n").length;
+  const g=document.getElementById("gutter"); let h="";
+  for(let i=1;i<=Math.max(lines,1);i++)
+    h+=`<div data-l="${i-1}">${String(i).padStart(2,"0")}</div>`;
+  g.innerHTML=h;
+  g.scrollTop=document.getElementById("code").scrollTop;
+}
+function highlightGutter(){
+  const g=document.getElementById("gutter");
+  [...g.children].forEach(d=>d.classList.toggle("active", +d.dataset.l===play.blockActive && play.running));
+}
+
+function refreshNotes(){
+  const box=document.getElementById("notes");
+  let h="";
+  if(play.running && play.blockActive>=0){
+    const line=getCode().split("\n")[play.blockActive]||"";
+    h+=`<div class="run-now"><span class="lab">Now running · N${play.blockActive+1}</span>${escapeHtml(line.trim())}</div>`;
+  }
+  LV.notes.forEach(n=>{
+    const cls = n.type==="tip"?"c-tip":n.type==="warn"?"c-warn":"c-note";
+    h+=`<div class="callout ${cls}"><span class="t">${n.t}</span>${n.body}</div>`;
+  });
+  box.innerHTML=h;
+}
+function escapeHtml(s){ return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+function doSubmit(){
+  const code=getCode();
+  const interp=interpret(code); INTERP=interp; SEGMENTS=interp.segments;
+  const sim=simulate(interp.segments);
+  const sc=score(sim, LV);
+  const cch=coach(code, interp, sim, sc, LV);
+  showResult(sc, cch);
+  // reflect final part in the sim view
+  play.prof=sim.prof; play.bore=sim.bore; play.threads=sim.threads; play.slots=sim.slots;
+  play.running=false; play.tool=interp.final; play.blockActive=-1;
+  drawFrame();
+}
+
+function showSolution(){
+  const rhead=document.getElementById("rhead");
+  rhead.className="rhead pass";
+  document.getElementById("verdict").textContent = "✔ Solution";
+  document.getElementById("verdict-sub").innerHTML = "Here is a professional program that solves this level. Study it, then try to write your own version.";
+  let h="<h4>Complete Working Program</h4>";
+  h+=`<div class="modelcode">${escapeHtml(LV.model)}</div>`;
+  if(LV.steps && LV.steps.length){
+    h+=`<h4>How it works</h4>`;
+    h+=`<div class="callout c-note"><span class="t">Program structure</span>`;
+    h+=`<ul style="margin:6px 0;padding-left:18px;font-size:13px">`;
+    LV.steps.forEach(s=>h+=`<li>${s}</li>`);
+    h+=`</ul></div>`;
+  }
+  document.getElementById("rbody").innerHTML=h;
+  document.getElementById("overlay").classList.add("show","left");
+}
+
+function showResult(sc, cch){
+  const accepted=cch.accepted;
+  const rhead=document.getElementById("rhead");
+  rhead.className="rhead "+(accepted?"pass":"fail");
+  document.getElementById("verdict").textContent = accepted?"✔ Part Accepted":"✘ Rejected";
+  document.getElementById("verdict-sub").innerHTML = accepted
+    ? "The finished profile matches the drawing within tolerance."
+    : (cch.hardErrs.length
+        ? "A machine error stopped this being a good part — see Must Fix."
+        : "The finished profile is out of tolerance — see below.");
+  let h="";
+
+  // dimensional report (reported truthfully even when a crash rejects the part)
+  h+=`<h4>Dimensional Check</h4>`;
+  if(sc.pass){
+    h+=`<div class="callout c-good"><span class="t">In tolerance</span>Every feature — diameters, lengths${sc.bore?', bore':''}${sc.thread?', thread':''}${sc.slot?', keyslot':''} — is within ±${sc.tol} mm.</div>`;
+  } else {
+    const o=sc.outer;
+    if(o.faceLeft>sc.tol) h+=`<div class="callout c-warn"><span class="t">End not faced</span>About ${o.faceLeft.toFixed(2)} mm of stock is left on the end face (near Z${o.faceAt.toFixed(1)}). Face across the centre to Z0.</div>`;
+    if(o.excess>sc.tol) h+=`<div class="callout c-warn"><span class="t">Too much stock left</span>The OD is ~${(o.excess*2).toFixed(2)} mm oversize near Z${(o.exAt??0).toFixed(1)} — remove more material.</div>`;
+    if(o.gouge>sc.tol) h+=`<div class="callout c-warn"><span class="t">Scrap — cut undersize</span>The OD is ~${(o.gouge*2).toFixed(2)} mm undersize near Z${(o.goAt??0).toFixed(1)}. Check your X (it's a diameter).</div>`;
+    if(sc.bore && !sc.bore.pass){
+      if(sc.bore.tooSmall>sc.tol) h+=`<div class="callout c-warn"><span class="t">Bore too small</span>The hole is ~${(sc.bore.tooSmall*2).toFixed(2)} mm undersize near Z${(sc.bore.smAt??0).toFixed(1)} — drill/bore larger or deeper.</div>`;
+      if(sc.bore.tooBig>sc.tol) h+=`<div class="callout c-warn"><span class="t">Bore too big</span>The hole is ~${(sc.bore.tooBig*2).toFixed(2)} mm oversize near Z${(sc.bore.bgAt??0).toFixed(1)} — scrap.</div>`;
+    }
+    if(sc.thread && !sc.thread.pass) sc.thread.msgs.forEach(mm=>h+=`<div class="callout c-warn"><span class="t">Thread</span>${mm}</div>`);
+    if(sc.slot && !sc.slot.pass) sc.slot.msgs.forEach(mm=>h+=`<div class="callout c-warn"><span class="t">Keyslot</span>${mm}</div>`);
+  }
+
+  // must-fix (crashes, spindle-off cuts, missing M03)
+  if(cch.hardErrs.length){
+    h+=`<h4>Must Fix</h4>`;
+    cch.hardErrs.forEach(e=>h+=`<div class="callout c-warn"><span class="t">Error</span>${e}</div>`);
+  }
+  // warnings (won't stop the run but a pro would never leave them)
+  if(cch.warns.length){
+    h+=`<h4>Warnings</h4>`;
+    cch.warns.forEach(e=>h+=`<div class="callout c-warn"><span class="t">Check</span>${e}</div>`);
+  }
+
+  // code review
+  if(cch.professional){
+    h+=`<h4>Code Review</h4><div class="callout c-good"><span class="t">Professional</span>This is clean, professional-grade code: numbered program, safe start, spindle &amp; coolant sequenced, constant surface speed, and a proper home + <code class="i">M30</code> ending. Nicely done.</div>`;
+  } else if(cch.tips.length){
+    h+=`<h4>Suggestions — what a pro would add</h4>`;
+    cch.tips.forEach(t=>h+=`<div class="callout c-tip"><span class="t">Try</span>${t}</div>`);
+  }
+  if(cch.goods.length){
+    h+=`<h4>Done Well</h4><div class="callout c-note"><span class="t">Good habits</span>`+
+       cch.goods.map(g=>"• "+g).join("<br>")+`</div>`;
+  }
+
+  // model program for reference when the part is rejected
+  if(!accepted){
+    h+=`<h4>One Professional Solution</h4><div class="modelcode">${escapeHtml(LV.model)}</div>`;
+  }
+
+  document.getElementById("rbody").innerHTML=h;
+  document.getElementById("overlay").classList.remove("left");
+  document.getElementById("overlay").classList.add("show");
+}
+
+/* ---- events ---- */
+document.getElementById("btn-play").addEventListener("click", ()=>{
+  if(play.running){ play.running=false; if(raf)cancelAnimationFrame(raf); setPlayLabel(false); setStatus("PAUSED"); refreshNotes(); highlightGutter(); return; }
+  if(play.done || play.segIdx>=SEGMENTS.length){ resetPlay(true); }
+  else if(play.segIdx===0 && play.t===0){ resetPlay(true); }
+  play.running=true; setPlayLabel(true); setStatus("RUNNING"); refreshNotes();
+  const tick=()=>{ refreshNotes(); highlightGutter(); if(play.running) setTimeout(tick,120); };
+  tick();
+  loop();
+});
+document.getElementById("btn-step").addEventListener("click", ()=>{
+  if(play.done) return;
+  if(!SEGMENTS.length) resetPlay(true);
+  stepSegment(); drawFrame(); setStatus("STEP "+play.segIdx+"/"+SEGMENTS.length);
+  refreshNotes();
+  const g=document.getElementById("gutter");
+  [...g.children].forEach(d=>d.classList.toggle("active", +d.dataset.l===play.blockActive));
+});
+document.getElementById("btn-reset").addEventListener("click", ()=>{ if(raf)cancelAnimationFrame(raf); resetPlay(true); refreshNotes(); highlightGutter(); });
+document.getElementById("btn-solution").addEventListener("click", ()=>{ showSolution(); });
+document.getElementById("btn-submit").addEventListener("click", ()=>{ if(raf)cancelAnimationFrame(raf); play.running=false; setPlayLabel(false); doSubmit(); });
+document.getElementById("close-result").addEventListener("click", ()=>document.getElementById("overlay").classList.remove("show"));
+document.getElementById("overlay").addEventListener("click", e=>{ if(e.target.id==="overlay") document.getElementById("overlay").classList.remove("show"); });
+
+const codeEl=document.getElementById("code");
+codeEl.addEventListener("input", ()=>{ syncGutter(); INTERP=null; });
+codeEl.addEventListener("scroll", ()=>{ document.getElementById("gutter").scrollTop=codeEl.scrollTop; });
+document.getElementById("speed").addEventListener("input", ()=>{});
+window.addEventListener("resize", ()=>{ fitCanvas(); drawFrame(); });
+
+function fitCanvas(){
+  const wrap=cv.parentElement;
+  const w=wrap.clientWidth;
+  cv.width=Math.max(600,w);
+  cv.height=Math.round(cv.width*0.52);
+}
+
+/* ============================================================
+   10. BOOT
+   ============================================================ */
+let curLevel=0;
+function loadLevel(idx){
+  curLevel=Math.max(0, Math.min(LEVELS.length-1, idx));
+  const level=LEVELS[curLevel];
+  if(raf)cancelAnimationFrame(raf);
+  play.running=false; setPlayLabel(false);
+  setupGeometry(level);
+  TARGET=buildTarget(level);
+  document.getElementById("lvl-num").textContent=level.id;
+  document.getElementById("lvl-title").textContent=level.title;
+  document.getElementById("code").value=level.starter;
+  document.getElementById("lvl-prev").disabled = curLevel===0;
+  document.getElementById("lvl-next").disabled = curLevel===LEVELS.length-1;
+  renderDrawing(level);
+  syncGutter();
+  fitCanvas();
+  resetPlay(true);
+  refreshNotes();
+}
+document.getElementById("lvl-prev").addEventListener("click", ()=>loadLevel(curLevel-1));
+document.getElementById("lvl-next").addEventListener("click", ()=>loadLevel(curLevel+1));
+
+/* ============================================================
+   11. ASK-COACH  (offline, level-aware Q&A assistant)
+   ============================================================ */
+const KB = [
+  // ---- level help (context-aware) ----
+  { k:["hint","stuck","help me","how do i do","how do i start","what do i do","where do i start","confused","begin"],
+    a:()=>`<b>Level ${LV.id} — ${LV.title}.</b> Start here: ${LV.steps[0]}${LV.steps[1]?" Then: "+LV.steps[1]:""} The full worked program is behind the <b>Solution</b> button. Ask me “next step” for more.` },
+  { k:["next step","then what","after that","what next"],
+    a:()=>`Steps for this part:<br>• ${LV.steps.join("<br>• ")}` },
+  { k:["target","what shape","what am i making","what to make","the drawing","what part"],
+    a:()=>`You're making the <b>${LV.title}</b> from Ø${LV.stock.diameter}×${LV.stock.length} ${LV.stock.material}. The blueprint on the right shows every diameter and length; match it within ±${LV.tolerance} mm.` },
+  { k:["tolerance","how close","how accurate","precision"],
+    a:()=>`This level's tolerance is <b>±${LV.tolerance} mm</b> on the radius. Stay within that of the drawing and the part is accepted; cut past it and it's scrap.` },
+  { k:["rejected","reject","wrong","why fail","failed","not accepted","scrap","gouge","didnt work","error in my"],
+    a:"Press <b>Submit</b> — the coach lists exactly what's off: wrong Ø, a crash, or the spindle not started. The usual culprits: no <code>M03</code> before the first cut, a <code>G01</code> with no <code>F</code>, or a <code>G00</code> that drives into the stock." },
+  { k:["order","structure","layout","skeleton","template","what order"],
+    a:"A tidy turning program runs: safe start (<code>G21 G40</code>) → home <code>G28</code> → tool <code>T0101</code> → clamp + speed <code>G50</code>/<code>G96</code> → approach + <code>M08</code> → cut → retract → <code>M09 M05</code> → <code>G28</code> → <code>M30</code>." },
+  // ---- motion / arcs ----
+  { k:["g00","g0","rapid","positioning"], a:"<code>G00</code> = rapid positioning (no cut) — fast moves through air. Never rapid into the stock; that's a crash." },
+  { k:["g01","g1","feed","straight cut","linear"], a:"<code>G01</code> = straight cut at the feed set by <code>F</code>. Turn along Z, face along X; a taper changes both at once." },
+  { k:["g02","g2","clockwise"], a:"<code>G02</code> = clockwise arc. Size it with a radius <code>R</code>, or the centre with <code>I,K</code>." },
+  { k:["g03","g3","counter","counterclockwise","anticlock"], a:"<code>G03</code> = counter-clockwise arc. Same options as G02: <code>R</code> or <code>I,K</code>." },
+  { k:["arc","radius","round","curve","fillet","i and k","i,k","ik","i k","what is i","what is k"],
+    a:"Arcs use <code>G02</code> (CW) or <code>G03</code> (CCW). Two ways to size them: <code>R5</code> = radius 5; or <code>I,K</code> = distance from the arc's START to its CENTRE (I along X-radius, K along Z). Positive R takes the short way (&lt;180°)." },
+  { k:["taper","cone","angle cut"], a:"A taper changes X and Z in the <b>same</b> <code>G01</code>, e.g. <code>G01 X50 Z-40</code> cuts a cone." },
+  { k:["chamfer","c2","break edge","45"], a:"A chamfer is a short 45° taper. C2 = 2 mm: start 2 mm undersize at the face and <code>G01</code> out over 2 mm of Z, e.g. <code>G01 X30 Z-2</code>." },
+  // ---- spindle / speed ----
+  { k:["g96","css","surface speed","constant surface"], a:"<code>G96</code> = constant surface speed: rpm changes so the cutting speed (m/min) stays constant as the diameter changes — an even finish. Clamp the max rpm with <code>G50 S____</code>." },
+  { k:["g97","fixed rpm","constant rpm","rpm mode"], a:"<code>G97</code> = fixed rpm. Use it for drilling, threading and grooving, where surface speed at the centre is meaningless." },
+  { k:["g50","clamp","max rpm","limit speed"], a:"<code>G50 S____</code> clamps the maximum spindle rpm so <code>G96</code> doesn't over-spin small diameters." },
+  // ---- canned cycles ----
+  { k:["g70","finish cycle","finishing"], a:"<code>G70 P.. Q..</code> is the finishing cycle. It runs the profile block (between the P and Q line numbers) once for the final pass — usually after G71/G72 roughing." },
+  { k:["g71","rough","roughing","rough turn"], a:"<code>G71</code> is the OD roughing cycle: it hogs the shape out in parallel passes down to a finish allowance (<code>U</code>/<code>W</code>). Point it at the profile with <code>P</code> and <code>Q</code>, then finish with <code>G70</code>." },
+  { k:["g72","facing cycle","face cycle"], a:"<code>G72</code> is the facing-direction twin of G71 — same P–Q profile, but it roughs across the face. Good for big, shallow disc parts." },
+  { k:["g74","peck","drill cycle","pecking"], a:"<code>G74</code> is peck-drilling on centre: it pecks in and retracts to clear chips. Give it the depth <code>Z</code> and peck amount <code>Q</code>." },
+  { k:["g75","groove cycle","part off","parting"], a:"<code>G75</code> is the grooving / part-off cycle: it plunges in X to the groove-bottom diameter, pecking to clear chips." },
+  { k:["g76","thread cycle","threading cycle"], a:"<code>G76</code> is the threading cycle: it sinks the thread form in many passes. The <code>F</code> word is the pitch (lead); <code>X</code> is the minor diameter." },
+  { k:["g40","g41","g42","nose comp","tool nose","compensation","tnr"], a:"<code>G41</code>/<code>G42</code> turn on tool-nose-radius compensation so the insert's round tip doesn't leave angled faces oversize; <code>G40</code> cancels it." },
+  { k:["g20","g21","units","metric","inch","mm"], a:"<code>G21</code> = millimetres (what these levels use); <code>G20</code> = inches." },
+  { k:["g18","plane"], a:"<code>G18</code> selects the ZX plane — the normal turning plane, so arcs curve in Z–X." },
+  { k:["g98","g99","feed per","per rev","per min"], a:"<code>G99</code> = feed per revolution (mm/rev, normal for turning). <code>G98</code> = feed per minute." },
+  { k:["g28","home","reference return"], a:"<code>G28 U0 W0</code> returns the tool to machine home. Do it before a tool change and at the very end." },
+  // ---- M codes ----
+  { k:["m03","m3","spindle on","spindle start","clockwise spindle"], a:"<code>M03</code> starts the spindle clockwise (normal). Always start it before the first cut." },
+  { k:["m04","m4","reverse spindle","ccw spindle"], a:"<code>M04</code> runs the spindle counter-clockwise. Most OD turning uses <code>M03</code> (CW)." },
+  { k:["m05","m5","spindle stop","stop spindle"], a:"<code>M05</code> stops the spindle — near the end, after the last cut." },
+  { k:["m08","m8","m09","m9","coolant","flood"], a:"<code>M08</code> turns coolant on; <code>M09</code> off. Turn it on before cutting." },
+  { k:["m30","m2","m02","end of program","program end","rewind"], a:"<code>M30</code> ends the program and rewinds. Put <code>M05</code> and <code>G28</code> before it." },
+  { k:["m13","live tool","c axis","c-axis","driven tool"], a:"<code>M13</code> switches the live tool + C-axis on for milling a keyslot — after you stop the main spindle with M05." },
+  // ---- address words ----
+  { k:["what is x","the x","x word","x axis","diameter"], a:"<code>X</code> is a <b>diameter</b> (absolute). <code>X40</code> = Ø40. Internally the tool sits at radius 20." },
+  { k:["what is z","the z","z word","z axis","axial"], a:"<code>Z</code> is the axial position (absolute). <code>Z0</code> is the faced end; negative Z goes into the part." },
+  { k:["what is u","what is w","u word","w word","incremental","u and w"], a:"<code>U</code> and <code>W</code> are incremental moves — U is a diameter change, W a Z change, relative to where you are now." },
+  { k:["what is f","the f word","feedrate","feed rate"], a:"<code>F</code> is the feedrate. Under <code>G99</code> it's mm per revolution (e.g. <code>F0.2</code>). On a G76 thread it's the pitch." },
+  { k:["what is s","the s word","spindle speed"], a:"<code>S</code> is the spindle speed — rpm under <code>G97</code>, or m/min under <code>G96</code>." },
+  { k:["what is t","the t word","tool word","tool offset","t0101"], a:"<code>T</code> picks the tool and offset, e.g. <code>T0101</code> = tool 1 with offset 1." },
+  // ---- operations ----
+  { k:["face","facing"], a:"Facing = flatten the end. Feed the tool across the face in X past centre, e.g. <code>G01 X-1</code> at <code>Z0</code>." },
+  { k:["turn","turning","reduce diameter","od turn"], a:"Turning = reduce the diameter. Rapid to the target X, then feed along Z: <code>G00 X40</code> then <code>G01 Z-30</code>." },
+  { k:["thread","threading","screw"], a:"Threading: turn the major diameter first, then <code>G76</code> sinks the form. The F word is the pitch; use fixed rpm <code>G97</code>." },
+  { k:["drill","drilling","hole"], a:"Drilling sits on centre (<code>X0</code>) and feeds in Z. Use <code>G74</code> to peck, and fixed rpm <code>G97</code>." },
+  { k:["bore","boring"], a:"Boring enlarges an existing (drilled) hole from the inside — a bigger <code>X</code> makes a bigger bore." },
+  { k:["groove","grooving"], a:"Grooving plunges a narrow tool straight in (X) to the groove diameter — cycle <code>G75</code>." },
+  { k:["keyslot","key slot","slot","milling","mill"], a:"A keyslot needs the live tool + C-axis (<code>M13</code>): stop the main spindle, index <code>C0</code>, plunge in X, then feed along Z." }
+];
+const CHAT_QUICK = ["Hint for this level","What is G96?","G02 vs G03","What are I and K?","How do I face?","What's my tolerance?"];
+let chatSeeded=false;
+
+function normQ(s){ return " "+s.toLowerCase().replace(/[^a-z0-9]+/g," ").trim().replace(/\s+/g," ")+" "; }
+function coachAnswer(q){
+  const nq=normQ(q);
+  let best=null, bestScore=0;
+  for(const e of KB){
+    let sc=0;
+    for(const key of e.k){ const nk=normQ(key).trim(); if(nq.includes(" "+nk+" ")) sc=Math.max(sc, nk.length); }
+    if(sc>bestScore){ bestScore=sc; best=e; }
+  }
+  if(best) return typeof best.a==="function" ? best.a() : best.a;
+  return "I'm not sure about that one — try naming a code (<code>G96</code>, <code>M03</code>, <code>G71</code>), an address word (<code>X</code>, <code>Z</code>, <code>F</code>), or a task (face, taper, thread, arc). Or hit <b>Solution</b> for the full worked program.";
+}
+function chatAppend(text, who){
+  const log=document.getElementById("chatlog");
+  const m=document.createElement("div");
+  m.className="chat-msg "+who; m.innerHTML=text;
+  log.appendChild(m); log.scrollTop=log.scrollHeight;
+  return m;
+}
+const esc = s => (s||"").replace(/[<>&]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;"}[c]));
+// light markdown -> safe HTML for AI replies
+function mdToHtml(s){
+  s = esc(s);
+  s = s.replace(/```[a-z]*\n?([\s\S]*?)```/gi, (m,c)=>'<pre class="chatcode">'+c.replace(/\n+$/,'')+'</pre>');
+  s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+  s = s.replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>');
+  s = s.replace(/(^|<br>)\s*[-*]\s+/g, '$1• ');
+  s = s.replace(/\n{2,}/g, '<br><br>').replace(/\n/g, '<br>');
+  return s;
+}
+function extractText(r){
+  if(!r) return "";
+  if(typeof r==="string") return r;
+  if(typeof r.text==="string") return r.text;
+  if(r.choices && r.choices[0]) return extractText(r.choices[0].message || r.choices[0]);
+  const c = r.message ? r.message.content : r.content;
+  if(typeof c==="string") return c;
+  if(Array.isArray(c)) return c.map(p=> typeof p==="string"?p:(p.text||"")).join("");
+  return "";
+}
+function coachSystemPrompt(){
+  const feats=[];
+  if(LV.target.bore) feats.push("an internal bore");
+  if(LV.target.threads) feats.push(LV.target.threads.map(t=>`a ${t.side} thread`).join(" and "));
+  if(LV.target.slots) feats.push("a milled keyslot");
+  return `You are a friendly, concise FANUC 0i-TF CNC lathe programming tutor inside a G-code learning game. `+
+    `Teach turning G-code (G00/G01/G02/G03 arcs, G28, G50, G96/G97, G70/G71/G72/G74/G75/G76 cycles, M03/M05/M08/M30). `+
+    `Remember: on a lathe X is a DIAMETER, Z is axial (Z0 = faced end, negative into the part), U/W are incremental. `+
+    `The student is on Level ${LV.id}: "${LV.title}" — making it from Ø${LV.stock.diameter}×${LV.stock.length} mm ${LV.stock.material}`+
+    `${feats.length?" with "+feats.join(" and "):""}, tolerance ±${LV.tolerance} mm. `+
+    `Answer in 1-4 short sentences (or a short list). Use G-code examples in backticks. Give hints, not always the full program. Plain, encouraging language.`;
+}
+async function chatAsk(q){
+  q=(q||"").trim(); if(!q) return;
+  chatAppend(esc(q), "user");
+  const think = chatAppend('<span class="typing"><i></i><i></i><i></i></span>', "bot");
+  try{
+    if(window.puter && puter.ai && puter.ai.chat && navigator.onLine!==false){
+      const resp = await Promise.race([
+        puter.ai.chat(
+          [{role:"system",content:coachSystemPrompt()},{role:"user",content:q}],
+          {model:"gpt-4o-mini"}),
+        new Promise((_,rej)=>setTimeout(()=>rej(new Error("ai-timeout")), 30000))
+      ]);
+      const text = extractText(resp).trim();
+      if(text){ think.innerHTML = mdToHtml(text); return; }
+    }
+  }catch(e){ /* fall through to the offline coach */ }
+  think.innerHTML = coachAnswer(q) +
+    '<span class="muted">Built-in answer. The full AI coach needs internet and a free one-time Puter sign-in.</span>';
+}
+function seedChat(){
+  if(chatSeeded) return; chatSeeded=true;
+  chatAppend("Hi! I'm your G-code coach — ask me <b>anything</b> about lathe programming or this part. Try <i>how do I cut a taper?</i>, <i>what are I and K?</i>, or tap a chip below.<span class='muted'>The AI coach is free — the first question may pop a quick one-time sign-in. No internet? You still get built-in help.</span>", "bot");
+  const qz=document.getElementById("chatquick");
+  CHAT_QUICK.forEach(t=>{ const c=document.createElement("button"); c.className="chip"; c.textContent=t;
+    c.addEventListener("click", ()=>{ chatAsk(t); }); qz.appendChild(c); });
+}
+function switchNotesTab(pane){
+  const isChat = pane==="chat";
+  document.getElementById("tab-notes").classList.toggle("active", !isChat);
+  document.getElementById("tab-chat").classList.toggle("active", isChat);
+  document.getElementById("notes").style.display    = isChat ? "none" : "";
+  document.getElementById("chatpane").style.display = isChat ? "flex" : "none";
+  document.getElementById("btn-solution").style.display = isChat ? "none" : "";
+  if(isChat){ seedChat(); setTimeout(()=>document.getElementById("chatq").focus(),0); }
+}
+document.getElementById("tab-notes").addEventListener("click", ()=>switchNotesTab("notes"));
+document.getElementById("tab-chat").addEventListener("click", ()=>switchNotesTab("chat"));
+document.getElementById("chatsend").addEventListener("click", ()=>{ const i=document.getElementById("chatq"); chatAsk(i.value); i.value=""; });
+document.getElementById("chatq").addEventListener("keydown", e=>{ if(e.key==="Enter"){ const i=e.target; chatAsk(i.value); i.value=""; } });
+
+loadLevel(0);
+</script>
+</body>
+</html>
