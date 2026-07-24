@@ -58,15 +58,8 @@
 
   /* ---------- LAYOUT ---------- */
   .app{max-width:1500px;margin:0 auto;padding:16px;display:grid;gap:14px;
-    grid-template-columns:1.5fr 1fr;grid-template-areas:
-      "sim  draw"
-      "trans draw"
-      "bottom bottom";}
-  #sim-zone{grid-area:sim}
-  #draw-zone{grid-area:draw}
-  #trans-zone{grid-area:trans}
-  #bottom-zone{grid-area:bottom;display:grid;gap:14px;
-    grid-template-columns:210px 1fr 1.15fr}
+    grid-template-columns:1.5fr 1fr;align-items:start}
+  .col{display:flex;flex-direction:column;gap:14px;min-width:0}
 
   .panel{background:var(--card);border:1px solid var(--line);border-radius:7px;
     box-shadow:0 1px 0 rgba(0,0,0,.03);overflow:hidden;display:flex;flex-direction:column}
@@ -81,16 +74,16 @@
   /* ---------- SIM CANVAS ---------- */
   #sim-zone .body{padding:0;position:relative;background:var(--screen)}
   canvas#stage{display:block;width:100%;height:auto}
-  .dro{position:absolute;top:10px;left:10px;font-family:var(--mono);font-size:11.5px;
-    color:var(--grn);background:rgba(6,11,13,.72);border:1px solid #1d2e36;border-radius:4px;
-    padding:8px 11px;line-height:1.7;letter-spacing:.02em;pointer-events:none}
+  .dro{position:absolute;bottom:8px;left:8px;font-family:var(--mono);font-size:9.5px;
+    color:var(--grn);background:rgba(6,11,13,.82);border:1px solid #1d2e36;border-radius:4px;
+    padding:5px 8px;line-height:1.45;letter-spacing:.02em;pointer-events:none}
   .dro b{color:var(--scr-amber);font-weight:500}
   .dro .off{color:var(--scr-mute)}
   .dro .on{color:var(--grn)}
-  .dro .hd{color:var(--scr-mute);text-transform:uppercase;letter-spacing:.16em;font-size:9px;
-    border-bottom:1px solid #1d2e36;padding-bottom:4px;margin-bottom:5px}
-  .dro .big{font-size:14px;letter-spacing:.06em}
-  .dro .sep{height:1px;background:#1d2e36;margin:5px 0}
+  .dro .hd{color:var(--scr-mute);text-transform:uppercase;letter-spacing:.12em;font-size:8px;
+    border-bottom:1px solid #1d2e36;padding-bottom:3px;margin-bottom:3px}
+  .dro .big{font-size:11px;letter-spacing:.05em}
+  .dro .sep{height:1px;background:#1d2e36;margin:3px 0}
   .dro .rowlbl{color:var(--scr-mute)}
   .legend{position:absolute;bottom:8px;right:10px;font-family:var(--mono);font-size:10px;
     color:#7f9aa6;display:flex;gap:12px;pointer-events:none}
@@ -222,12 +215,11 @@
     padding:12px 14px;border-radius:5px;white-space:pre;overflow-x:auto;line-height:1.6;margin-top:6px}
 
   @media(max-width:1050px){
-    .app{grid-template-columns:1fr;grid-template-areas:"sim" "draw" "trans" "bottom"}
-    #bottom-zone{grid-template-columns:1fr}
+    .app{grid-template-columns:1fr}
   }
   /* ---------- TEACH ME ---------- */
-  .teachbtn{font-family:var(--disp);text-transform:uppercase;letter-spacing:.08em;font-weight:600;font-size:12px;
-    color:#10202a;background:var(--amber);border:0;border-radius:6px;padding:8px 14px;margin-right:12px;cursor:pointer}
+  .teachbtn{font-family:var(--disp);text-transform:uppercase;letter-spacing:.06em;font-weight:600;font-size:11px;
+    color:#10202a;background:var(--amber);border:0;border-radius:5px;padding:5px 10px;cursor:pointer;white-space:nowrap}
   .teachbtn:hover{background:#d98a2a}
   .teach{background:var(--card);border-radius:9px;width:min(1000px,96vw);max-height:92vh;display:flex;flex-direction:column;
     overflow:hidden;box-shadow:0 18px 50px rgba(0,0,0,.4);border:1px solid var(--line)}
@@ -273,7 +265,6 @@
     <h1>CNC Lathe — Programming Game</h1>
   </div>
   <div class="spacer"></div>
-  <button class="teachbtn" id="btn-teach" title="Learn metal-cutting theory">📚 Teach Me</button>
   <div class="lvlsel">
     <button class="lvlbtn" id="lvl-prev" title="Previous level">◀</button>
     <div class="lvl" id="lvl-chip">Level <b id="lvl-num">1</b> · <span id="lvl-title">—</span></div>
@@ -282,6 +273,8 @@
 </header>
 
 <div class="app">
+
+  <div class="col col-left">
 
   <!-- ============ MACHINE SIMULATION ============ -->
   <section class="panel" id="sim-zone">
@@ -295,15 +288,6 @@
         <span><i class="l-f"></i>G01 feed</span>
         <span><i class="l-t"></i>target</span>
       </div>
-    </div>
-  </section>
-
-  <!-- ============ TECHNICAL DRAWING ============ -->
-  <section class="panel" id="draw-zone">
-    <div class="head"><span class="dot"></span><span class="t">Technical Drawing · Target Part</span></div>
-    <div class="body">
-      <div id="drawing"></div>
-      <div class="draw-note" id="draw-note"></div>
     </div>
   </section>
 
@@ -323,11 +307,8 @@
     </div>
   </section>
 
-  <!-- ============ BOTTOM ROW ============ -->
-  <div id="bottom-zone">
-
-    <!-- REFERENCE -->
-    <section class="panel" id="ref-zone">
+  <!-- ============ REFERENCE ============ -->
+  <section class="panel" id="ref-zone">
       <div class="head"><span class="dot"></span><span class="t">Reference</span></div>
       <div class="body">
         <details class="ref" open>
@@ -368,29 +349,20 @@
       </div>
     </section>
 
-    <!-- THINGS TO NOTE / ASK COACH -->
-    <section class="panel" id="notes-zone">
-      <div class="head">
-        <span class="dot"></span>
-        <button class="ntab active" id="tab-notes" data-pane="notes">Things to Note</button>
-        <button class="ntab" id="tab-chat" data-pane="chat">💬 Ask Coach</button>
-        <button class="tb" id="btn-solution" style="margin-left:auto;padding:5px 10px;font-size:11px">
-          <svg viewBox="0 0 24 24" fill="currentColor" style="width:11px;height:11px"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
-          Solution
-        </button></div>
-      <div class="body" id="notes"></div>
-      <div class="body" id="chatpane" style="display:none">
-        <div class="chat-log" id="chatlog"></div>
-        <div class="chat-quick" id="chatquick"></div>
-        <div class="chat-input">
-          <input id="chatq" type="text" autocomplete="off" spellcheck="false"
-                 placeholder="Ask about a G-code, this part, tolerance…">
-          <button id="chatsend" class="tb go" title="Send">Ask</button>
-        </div>
+  </div><!-- /col-left -->
+
+  <div class="col col-right">
+
+    <!-- ============ TECHNICAL DRAWING ============ -->
+    <section class="panel" id="draw-zone">
+      <div class="head"><span class="dot"></span><span class="t">Technical Drawing · Target Part</span></div>
+      <div class="body">
+        <div id="drawing"></div>
+        <div class="draw-note" id="draw-note"></div>
       </div>
     </section>
 
-    <!-- CODE EDITOR -->
+    <!-- ============ CODE EDITOR ============ -->
     <section class="panel" id="code-zone">
       <div class="head"><span class="dot"></span><span class="t">Coding · MDI / Program</span>
         <span class="rt">O-PROGRAM</span></div>
@@ -406,7 +378,30 @@
         </div>
       </div>
     </section>
-  </div>
+
+    <!-- ============ ASK COACH ============ -->
+    <section class="panel" id="notes-zone">
+      <div class="head">
+        <span class="dot"></span>
+        <span class="t">💬 Ask Coach</span>
+        <button class="teachbtn" id="btn-teach" title="Learn metal-cutting theory">📚 Teach Me</button>
+        <button class="tb" id="btn-solution" style="margin-left:auto;padding:5px 10px;font-size:11px">
+          <svg viewBox="0 0 24 24" fill="currentColor" style="width:11px;height:11px"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
+          Solution
+        </button></div>
+      <div class="body" id="chatpane">
+        <div class="chat-log" id="chatlog"></div>
+        <div class="chat-quick" id="chatquick"></div>
+        <div class="chat-input">
+          <input id="chatq" type="text" autocomplete="off" spellcheck="false"
+                 placeholder="Ask about a G-code, this part, tolerance…">
+          <button id="chatsend" class="tb go" title="Send">Ask</button>
+        </div>
+      </div>
+    </section>
+
+  </div><!-- /col-right -->
+
 </div>
 
 <!-- RESULT MODAL -->
@@ -2180,6 +2175,7 @@ function highlightGutter(){
 
 function refreshNotes(){
   const box=document.getElementById("notes");
+  if(!box) return;                 // "Things to Note" pane was removed
   let h="";
   if(play.running && play.blockActive>=0){
     const line=getCode().split("\n")[play.blockActive]||"";
@@ -2709,20 +2705,10 @@ function seedChat(){
   CHAT_QUICK.forEach(t=>{ const c=document.createElement("button"); c.className="chip"; c.textContent=t;
     c.addEventListener("click", ()=>{ chatAsk(t); }); qz.appendChild(c); });
 }
-function switchNotesTab(pane){
-  const isChat = pane==="chat";
-  document.getElementById("tab-notes").classList.toggle("active", !isChat);
-  document.getElementById("tab-chat").classList.toggle("active", isChat);
-  document.getElementById("notes").style.display    = isChat ? "none" : "";
-  document.getElementById("chatpane").style.display = isChat ? "flex" : "none";
-  document.getElementById("btn-solution").style.display = isChat ? "none" : "";
-  if(isChat){ seedChat(); setTimeout(()=>document.getElementById("chatq").focus(),0); }
-}
-document.getElementById("tab-notes").addEventListener("click", ()=>switchNotesTab("notes"));
-document.getElementById("tab-chat").addEventListener("click", ()=>switchNotesTab("chat"));
 document.getElementById("chatsend").addEventListener("click", ()=>{ const i=document.getElementById("chatq"); chatAsk(i.value); i.value=""; });
 document.getElementById("chatq").addEventListener("keydown", e=>{ if(e.key==="Enter"){ const i=e.target; chatAsk(i.value); i.value=""; } });
 
+seedChat();          // Ask Coach is always visible now — greet on load
 loadLevel(0);
 </script>
 </body>
