@@ -414,6 +414,21 @@
     .teach-nav{width:auto;display:flex;gap:6px;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line)}
     .teach-nav button{white-space:nowrap;width:auto}
   }
+
+  /* ---------- LANGUAGE SELECTOR ---------- */
+  .lang-sel{display:flex;gap:2px;align-items:center;position:relative;
+    background:rgba(255,255,255,.06);border:1px solid rgba(56,189,248,.15);border-radius:6px;
+    padding:2px;backdrop-filter:blur(4px)}
+  .lang-sel .lb{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+    padding:5px 9px;border-radius:4px;cursor:pointer;color:#8fa5b0;
+    transition:var(--transition);border:0;background:transparent;line-height:1}
+  .lang-sel .lb:hover{color:#cfe0e6;background:rgba(255,255,255,.06)}
+  .lang-sel .lb.active{color:#fff;background:linear-gradient(135deg,var(--steel),var(--steel-d));
+    box-shadow:0 1px 4px rgba(14,116,144,.3)}
+  @media(max-width:480px){
+    .lang-sel{order:-1}
+    .lang-sel .lb{padding:4px 7px;font-size:9px}
+  }
 </style>
 <!-- Free browser AI (no API key). If offline / blocked, the chat falls back to the built-in coach. -->
 <script src="https://js.puter.com/v2/"></script>
@@ -431,6 +446,11 @@
     <button class="lvlbtn" id="lvl-prev" title="Previous level">◀</button>
     <div class="lvl" id="lvl-chip">Level <b id="lvl-num">1</b> · <span id="lvl-title">—</span></div>
     <button class="lvlbtn" id="lvl-next" title="Next level">▶</button>
+  </div>
+  <div class="lang-sel" id="lang-sel">
+    <button class="lb active" data-lang="en">EN</button>
+    <button class="lb" data-lang="hi">हिं</button>
+    <button class="lb" data-lang="fi">FI</button>
   </div>
   <button class="lvlbtn" id="btn-progress" title="View all levels" style="font-size:15px;width:34px;height:32px">☰</button>
 </header>
@@ -1510,9 +1530,9 @@ function renderProgressOverlay(){
   const totalStars=PROGRESS.reduce((s,p)=>s+p.stars,0);
   const maxStars=LEVELS.length*3;
   stats.innerHTML=
-    `<div class="pstat"><div class="pval">${done}/${LEVELS.length}</div><div class="plab">Levels Done</div></div>`+
-    `<div class="pstat"><div class="pval">${totalStars}/${maxStars}</div><div class="plab">Stars Earned</div></div>`+
-    `<div class="pstat"><div class="pval">${Math.round(done/LEVELS.length*100)}%</div><div class="plab">Complete</div></div>`;
+    `<div class="pstat"><div class="pval">${done}/${LEVELS.length}</div><div class="plab">${T("levelsDone")}</div></div>`+
+    `<div class="pstat"><div class="pval">${totalStars}/${maxStars}</div><div class="plab">${T("starsEarned")}</div></div>`+
+    `<div class="pstat"><div class="pval">${Math.round(done/LEVELS.length*100)}%</div><div class="plab">${T("complete")}</div></div>`;
   grid.innerHTML="";
   LEVELS.forEach((lv,i)=>{
     const p=PROGRESS[i];
@@ -1522,7 +1542,7 @@ function renderProgressOverlay(){
     const badge = p.completed?"<div class='badge'>✓</div>":"";
     const card=document.createElement("div");
     card.className="lvl-card "+cls;
-    card.innerHTML=`<div class="ln">Level ${lv.id}</div><div class="lt">${lv.title}</div><div class="stars">${starHtml}</div>${badge}`;
+    card.innerHTML=`<div class="ln">${T("levelWord")} ${lv.id}</div><div class="lt">${lv.title}</div><div class="stars">${starHtml}</div>${badge}`;
     card.addEventListener("click",()=>{ loadLevel(i); closeProgress(); });
     grid.appendChild(card);
   });
@@ -1533,6 +1553,422 @@ function closeProgress(){ document.getElementById("progress-overlay").classList.
 document.getElementById("btn-progress").addEventListener("click", openProgress);
 document.getElementById("close-progress").addEventListener("click", closeProgress);
 document.getElementById("progress-overlay").addEventListener("click", e=>{ if(e.target.id==="progress-overlay") closeProgress(); });
+
+/* ============================================================
+   1b. LANGUAGE SYSTEM  (EN / HI / FI)
+   G-code terms, level titles, and technical content stay English.
+   All UI chrome (headers, buttons, labels, modals) is translated.
+   ============================================================ */
+let curLang = "en";
+
+const LANG = {
+  en: {
+    // header
+    kick:"FANUC · 0i-TF · Manual Turning",
+    h1:"CNC Lathe — Programming Game",
+    levelWord:"Level",
+    prevTitle:"Previous level", nextTitle:"Next level",
+    progressTitle:"View all levels",
+    // panels
+    simHead:"Machine · Turning Simulation",
+    drawHead:"Technical Drawing · Target Part",
+    codeHead:"Coding · MDI / Program",
+    refHead:"Reference",
+    coachHead:"💬 Ask Coach",
+    // sim status
+    ready:"READY", running:"RUNNING", paused:"PAUSED",
+    // transport
+    play:"Play", pause:"Pause", step:"Step", reset:"Reset",
+    speed:"Speed", submit:"Submit",
+    // editor
+    edHint:"Write FANUC turning G-code · X is a diameter · press Play to simulate",
+    // reference
+    refGCodes:"Basic G-Codes", refMCodes:"Basic M-Codes", refAddr:"Address Words",
+    refG00:"Rapid move (positioning) — no cut",
+    refG01:"Straight cut at feed — needs F",
+    refG2021:"Inch / Metric (G21 = mm)",
+    refG28:"Return to machine home (U0 W0)",
+    refG40:"Tool-nose comp OFF",
+    refG50:"Clamp max spindle RPM",
+    refG9697:"Const. surface speed / fixed RPM",
+    refG9899:"Feed per min / per rev (lathe: G99)",
+    refM03:"Spindle ON, forward (CW)",
+    refM04:"Spindle ON, reverse (CCW)",
+    refM05:"Spindle STOP",
+    refM08:"Coolant ON",
+    refM09:"Coolant OFF",
+    refM30:"End of program + rewind",
+    refX:"<b>Diameter</b> (absolute). X40 = Ø40",
+    refZ:"Axial position (absolute). Z0 = face",
+    refUW:"Incremental X (Ø) / Z",
+    refF:"Feed (mm/rev under G99)",
+    refS:"Spindle speed (rpm or m/min)",
+    refT:"Tool + offset, e.g. T0101",
+    // legend
+    legRapid:"G00 rapid", legFeed:"G01 feed", legTarget:"target",
+    // teach-me
+    teachBtn:"📚 Teach Me", solutionBtn:"Solution",
+    teachTitle:"📚 Metal-Cutting Theory",
+    teachSub:"Core turning knowledge — written for this game. Concepts, not copied pages.",
+    // progress
+    progTitle:"📊 Level Progress",
+    progSub:"Track your CNC programming journey",
+    levelsDone:"Levels Done", starsEarned:"Stars Earned", complete:"Complete",
+    // result
+    accepted:"✔ Part Accepted", rejected:"✘ Rejected",
+    acceptedSub:"The finished profile matches the drawing within tolerance.",
+    rejectedCrash:"A machine error stopped this being a good part — see Must Fix.",
+    rejectedDim:"The finished profile is out of tolerance — see below.",
+    dimCheck:"Dimensional Check", inTol:"In tolerance",
+    mustFix:"Must Fix", warnings:"Warnings",
+    codeReview:"Code Review", professional:"Professional",
+    profMsg:"This is clean, professional-grade code: numbered program, safe start, spindle &amp; coolant sequenced, constant surface speed, and a proper home + <code class=\"i\">M30</code> ending. Nicely done.",
+    suggestions:"Suggestions — what a pro would add",
+    doneWell:"Done Well", goodHabits:"Good habits",
+    oneSolution:"One Professional Solution",
+    solutionTitle:"✔ Solution",
+    solutionSub:"Here is a professional program that solves this level. Study it, then try to write your own version.",
+    howItWorks:"How it works", progStructure:"Program structure",
+    completeProgram:"Complete Working Program",
+    // dim errors
+    notFaced:"End not faced",
+    tooMuchStock:"Too much stock left",
+    cutUndersize:"Scrap — cut undersize",
+    boreTooSmall:"Bore too small", boreTooLarge:"Bore too big",
+    // close
+    close:"Close",
+    // draw note
+    stock:"Stock", dims:"Dimensions in mm", tol:"Tol",
+    bore:"bore", thread:"thread", keyslot:"keyslot",
+    // chat
+    chatGreeting:"Hi! I'm your lathe coach — ask me <b>anything</b> about lathes and machining: G-code, tooling, speeds &amp; feeds, work holding, threading, finishes, or this part. Try <i>how do I cut a taper?</i> or <i>what insert for stainless?</i>, or tap a chip below.<span class='muted'>The AI coach is free — the first question may pop a quick one-time sign-in. No internet? You still get built-in help.</span>",
+    chatPlaceholder:"Ask about a G-code, this part, tolerance…",
+    chatSend:"Ask",
+    chatQuick:["Hint for this level","What is G96?","Speeds & feeds for steel?","Which insert for aluminium?","How do I stop chatter?","What's my tolerance?"],
+    // DRO
+    droHead:"ACTUAL POSITION (ABSOLUTE)",
+    // every feat
+    everyFeat:"Every feature — diameters, lengths",
+    isWithin:"is within"
+  },
+  hi: {
+    kick:"FANUC · 0i-TF · मैनुअल टर्निंग",
+    h1:"CNC लेथ — प्रोग्रामिंग गेम",
+    levelWord:"लेवल",
+    prevTitle:"पिछला लेवल", nextTitle:"अगला लेवल",
+    progressTitle:"सभी लेवल देखें",
+    simHead:"मशीन · टर्निंग सिमुलेशन",
+    drawHead:"तकनीकी ड्राइंग · लक्ष्य पार्ट",
+    codeHead:"कोडिंग · MDI / प्रोग्राम",
+    refHead:"संदर्भ",
+    coachHead:"💬 कोच से पूछें",
+    ready:"तैयार", running:"चल रहा है", paused:"रुका हुआ",
+    play:"चलाएं", pause:"रोकें", step:"स्टेप", reset:"रीसेट",
+    speed:"गति", submit:"सबमिट",
+    edHint:"FANUC टर्निंग G-code लिखें · X डायमीटर है · सिमुलेट करने के लिए Play दबाएं",
+    refGCodes:"बुनियादी G-कोड", refMCodes:"बुनियादी M-कोड", refAddr:"एड्रेस वर्ड",
+    refG00:"रैपिड मूव (पोजीशनिंग) — बिना कट",
+    refG01:"सीधा कट फ़ीड पर — F चाहिए",
+    refG2021:"इंच / मेट्रिक (G21 = mm)",
+    refG28:"मशीन होम पर लौटें (U0 W0)",
+    refG40:"टूल-नोज़ कॉम्प बंद",
+    refG50:"अधिकतम स्पिंडल RPM क्लैंप",
+    refG9697:"स्थिर सतह गति / निश्चित RPM",
+    refG9899:"फ़ीड प्रति मिनट / प्रति चक्कर (लेथ: G99)",
+    refM03:"स्पिंडल चालू, आगे (CW)",
+    refM04:"स्पिंडल चालू, उल्टा (CCW)",
+    refM05:"स्पिंडल बंद",
+    refM08:"कूलेंट चालू",
+    refM09:"कूलेंट बंद",
+    refM30:"प्रोग्राम समाप्त + रीवाइंड",
+    refX:"<b>डायमीटर</b> (एब्सोल्यूट)। X40 = Ø40",
+    refZ:"अक्षीय स्थिति (एब्सोल्यूट)। Z0 = फेस",
+    refUW:"इंक्रीमेंटल X (Ø) / Z",
+    refF:"फ़ीड (mm/rev G99 में)",
+    refS:"स्पिंडल गति (rpm या m/min)",
+    refT:"टूल + ऑफसेट, जैसे T0101",
+    legRapid:"G00 रैपिड", legFeed:"G01 फ़ीड", legTarget:"लक्ष्य",
+    teachBtn:"📚 सिखाएं", solutionBtn:"हल",
+    teachTitle:"📚 धातु-काटने का सिद्धांत",
+    teachSub:"कोर टर्निंग ज्ञान — इस गेम के लिए लिखा गया।",
+    progTitle:"📊 लेवल प्रगति",
+    progSub:"अपनी CNC प्रोग्रामिंग यात्रा ट्रैक करें",
+    levelsDone:"लेवल पूरे", starsEarned:"तारे अर्जित", complete:"पूर्ण",
+    accepted:"✔ पार्ट स्वीकृत", rejected:"✘ अस्वीकृत",
+    acceptedSub:"तैयार प्रोफ़ाइल ड्राइंग से टॉलरेंस के भीतर मेल खाती है।",
+    rejectedCrash:"मशीन त्रुटि ने पार्ट खराब किया — Must Fix देखें।",
+    rejectedDim:"तैयार प्रोफ़ाइल टॉलरेंस से बाहर है — नीचे देखें।",
+    dimCheck:"आयामी जांच", inTol:"टॉलरेंस में",
+    mustFix:"ठीक करें", warnings:"चेतावनियां",
+    codeReview:"कोड समीक्षा", professional:"प्रोफेशनल",
+    profMsg:"यह साफ, पेशेवर-ग्रेड कोड है: क्रमांकित प्रोग्राम, सुरक्षित शुरुआत, स्पिंडल &amp; कूलेंट अनुक्रमित, स्थिर सतह गति, और उचित होम + <code class=\"i\">M30</code> अंत। बहुत अच्छा।",
+    suggestions:"सुझाव — एक प्रो क्या जोड़ेगा",
+    doneWell:"अच्छा किया", goodHabits:"अच्छी आदतें",
+    oneSolution:"एक प्रोफेशनल समाधान",
+    solutionTitle:"✔ समाधान",
+    solutionSub:"यहाँ एक पेशेवर प्रोग्राम है जो इस लेवल को हल करता है। इसे अध्ययन करें, फिर अपना संस्करण लिखने का प्रयास करें।",
+    howItWorks:"यह कैसे काम करता है", progStructure:"प्रोग्राम संरचना",
+    completeProgram:"पूरा कार्यशील प्रोग्राम",
+    notFaced:"फेस नहीं कटा",
+    tooMuchStock:"बहुत अधिक स्टॉक बचा",
+    cutUndersize:"स्क्रैप — अंडरसाइज़ कटा",
+    boreTooSmall:"बोर बहुत छोटा", boreTooLarge:"बोर बहुत बड़ा",
+    close:"बंद करें",
+    stock:"स्टॉक", dims:"आयाम mm में", tol:"टॉलरेंस",
+    bore:"बोर", thread:"थ्रेड", keyslot:"कीस्लॉट",
+    chatGreeting:"नमस्ते! मैं आपका लेथ कोच हूँ — लेथ और मशीनिंग के बारे में <b>कुछ भी</b> पूछें: G-code, टूलिंग, गति और फ़ीड, वर्क होल्डिंग, थ्रेडिंग, फ़िनिश, या यह पार्ट। <i>टेपर कैसे काटें?</i> या <i>स्टेनलेस के लिए कौन सा इंसर्ट?</i> आज़माएं, या नीचे चिप दबाएं।<span class='muted'>AI कोच मुफ़्त है — पहले सवाल पर एक बार साइन-इन आ सकता है। इंटरनेट नहीं? बिल्ट-इन मदद मिलेगी।</span>",
+    chatPlaceholder:"G-code, पार्ट, टॉलरेंस के बारे में पूछें…",
+    chatSend:"पूछें",
+    chatQuick:["इस लेवल के लिए हिंट","G96 क्या है?","स्टील के लिए गति और फ़ीड?","एल्युमिनियम के लिए कौन सा इंसर्ट?","चैटर कैसे रोकें?","मेरी टॉलरेंस क्या है?"],
+    droHead:"वास्तविक स्थिति (एब्सोल्यूट)",
+    everyFeat:"सभी फ़ीचर — डायमीटर, लंबाई",
+    isWithin:"के भीतर है"
+  },
+  fi: {
+    kick:"FANUC · 0i-TF · Manuaalisorvaus",
+    h1:"CNC-sorvi — Ohjelmointipeli",
+    levelWord:"Taso",
+    prevTitle:"Edellinen taso", nextTitle:"Seuraava taso",
+    progressTitle:"Näytä kaikki tasot",
+    simHead:"Kone · Sorvaussimulaatio",
+    drawHead:"Tekninen piirustus · Kohdeosa",
+    codeHead:"Koodaus · MDI / Ohjelma",
+    refHead:"Viite",
+    coachHead:"💬 Kysy valmentajalta",
+    ready:"VALMIS", running:"KÄYNNISSÄ", paused:"TAUOLLA",
+    play:"Toista", pause:"Tauko", step:"Askel", reset:"Nollaa",
+    speed:"Nopeus", submit:"Lähetä",
+    edHint:"Kirjoita FANUC-sorvaus G-koodi · X on halkaisija · paina Play simuloidaksesi",
+    refGCodes:"G-koodit (perus)", refMCodes:"M-koodit (perus)", refAddr:"Osoitesanat",
+    refG00:"Pikasiirto (asemointi) — ei leikkausta",
+    refG01:"Suora leikkaus syötöllä — tarvitsee F",
+    refG2021:"Tuuma / Metrinen (G21 = mm)",
+    refG28:"Paluu koneen kotiin (U0 W0)",
+    refG40:"Työkalun sädekorjaus POIS",
+    refG50:"Karan max. RPM rajoitus",
+    refG9697:"Vakio pintanopeus / kiinteä RPM",
+    refG9899:"Syöttö per min / per kierros (sorvi: G99)",
+    refM03:"Kara PÄÄLLE, eteenpäin (CW)",
+    refM04:"Kara PÄÄLLE, taakse (CCW)",
+    refM05:"Kara SEIS",
+    refM08:"Jäähdytysneste PÄÄLLE",
+    refM09:"Jäähdytysneste POIS",
+    refM30:"Ohjelma loppu + kelaus alkuun",
+    refX:"<b>Halkaisija</b> (absoluuttinen). X40 = Ø40",
+    refZ:"Aksiaaliasema (absoluuttinen). Z0 = pääty",
+    refUW:"Inkrementaalinen X (Ø) / Z",
+    refF:"Syöttö (mm/kier G99:ssä)",
+    refS:"Karan nopeus (rpm tai m/min)",
+    refT:"Työkalu + korjaus, esim. T0101",
+    legRapid:"G00 pika", legFeed:"G01 syöttö", legTarget:"kohde",
+    teachBtn:"📚 Opeta minua", solutionBtn:"Ratkaisu",
+    teachTitle:"📚 Metallinleikkausteoria",
+    teachSub:"Ydinsorvaustieto — kirjoitettu tätä peliä varten.",
+    progTitle:"📊 Tasojen edistyminen",
+    progSub:"Seuraa CNC-ohjelmointimatkasi etenemistä",
+    levelsDone:"Tasot valmiit", starsEarned:"Tähdet ansaittu", complete:"Valmis",
+    accepted:"✔ Osa hyväksytty", rejected:"✘ Hylätty",
+    acceptedSub:"Valmis profiili vastaa piirustusta toleranssin sisällä.",
+    rejectedCrash:"Konevirhe esti hyvän osan — katso Korjattava.",
+    rejectedDim:"Valmis profiili on toleranssin ulkopuolella — katso alla.",
+    dimCheck:"Mittaustarkastus", inTol:"Toleranssissa",
+    mustFix:"Korjattava", warnings:"Varoitukset",
+    codeReview:"Koodiarvostelu", professional:"Ammattilainen",
+    profMsg:"Tämä on siistiä, ammattitason koodia: numeroitu ohjelma, turvallinen aloitus, kara &amp; jäähdytys järjestyksessä, vakio pintanopeus ja oikea koti + <code class=\"i\">M30</code> lopetus. Hienosti tehty.",
+    suggestions:"Ehdotukset — mitä ammattilainen lisäisi",
+    doneWell:"Hyvin tehty", goodHabits:"Hyvät tavat",
+    oneSolution:"Yksi ammattimainen ratkaisu",
+    solutionTitle:"✔ Ratkaisu",
+    solutionSub:"Tässä on ammattimainen ohjelma tämän tason ratkaisemiseksi. Tutki sitä ja yritä kirjoittaa oma versiosi.",
+    howItWorks:"Miten se toimii", progStructure:"Ohjelman rakenne",
+    completeProgram:"Täydellinen toimiva ohjelma",
+    notFaced:"Päätä ei ole tasoitettu",
+    tooMuchStock:"Liikaa aihiota jäljellä",
+    cutUndersize:"Romu — leikattu alimittaan",
+    boreTooSmall:"Poraus liian pieni", boreTooLarge:"Poraus liian suuri",
+    close:"Sulje",
+    stock:"Aihio", dims:"Mitat mm:nä", tol:"Toleranssi",
+    bore:"poraus", thread:"kierre", keyslot:"kiilauura",
+    chatGreeting:"Hei! Olen sorvivalmentajasi — kysy <b>mitä tahansa</b> sorvauksesta ja koneistuksesta: G-koodi, työkalut, nopeudet ja syötöt, kiinnitys, kierteet, pinnanlaatu tai tämä osa. Kokeile <i>miten sorvataan kartio?</i> tai <i>mikä terä ruostumattomalle?</i>, tai paina alareunasta.<span class='muted'>AI-valmentaja on ilmainen — ensimmäinen kysymys saattaa pyytää kirjautumisen. Ei nettiä? Saat silti sisäänrakennetun avun.</span>",
+    chatPlaceholder:"Kysy G-koodista, tästä osasta, toleranssista…",
+    chatSend:"Kysy",
+    chatQuick:["Vinkki tälle tasolle","Mikä on G96?","Nopeudet ja syötöt teräkselle?","Mikä terä alumiinille?","Miten estän värinän?","Mikä on toleranssini?"],
+    droHead:"TODELLINEN SIJAINTI (ABSOLUUTTINEN)",
+    everyFeat:"Kaikki piirteet — halkaisijat, pituudet",
+    isWithin:"on sisällä"
+  }
+};
+
+function T(key){ return (LANG[curLang]||LANG.en)[key] || LANG.en[key] || key; }
+
+function applyLang(lang){
+  curLang = lang || curLang;
+  const t = k => T(k);
+
+  // header
+  document.querySelector("header .kick").textContent = t("kick");
+  document.querySelector("header h1").textContent = t("h1");
+  document.getElementById("lvl-prev").title = t("prevTitle");
+  document.getElementById("lvl-next").title = t("nextTitle");
+  document.getElementById("btn-progress").title = t("progressTitle");
+
+  // level chip
+  const lvNum = document.getElementById("lvl-num");
+  const chip = document.getElementById("lvl-chip");
+  if(lvNum && chip){
+    chip.innerHTML = `${t("levelWord")} <b id="lvl-num">${lvNum.textContent}</b> · <span id="lvl-title">${document.getElementById("lvl-title")?document.getElementById("lvl-title").textContent:"—"}</span>`;
+  }
+
+  // panel headers (use data-key attribute to find the right ones)
+  const heads = [
+    ["sim-zone", "simHead"],
+    ["draw-zone", "drawHead"],
+    ["code-zone", "codeHead"],
+    ["ref-zone", "refHead"],
+    ["notes-zone", "coachHead"]
+  ];
+  heads.forEach(([id, key])=>{
+    const el = document.querySelector(`#${id} .head .t`);
+    if(el) el.textContent = t(key);
+  });
+
+  // sim status
+  const ss = document.getElementById("sim-status");
+  if(ss){
+    const raw = ss.textContent.trim().toUpperCase();
+    if(raw==="READY"||raw===LANG.en.ready||raw===LANG.hi.ready||raw===LANG.fi.ready) ss.textContent = t("ready");
+    else if(raw==="RUNNING"||raw===LANG.en.running||raw===LANG.hi.running||raw===LANG.fi.running) ss.textContent = t("running");
+    else if(raw.startsWith("PAUS")||raw===LANG.hi.paused||raw===LANG.fi.paused) ss.textContent = t("paused");
+  }
+
+  // transport buttons
+  const pl = document.getElementById("play-label");
+  if(pl){
+    const isRunning = (typeof play!=="undefined" && play.running);
+    pl.textContent = isRunning ? t("pause") : t("play");
+  }
+  // step / reset (inner text after svg)
+  const btnStep = document.getElementById("btn-step");
+  if(btnStep){ const svg=btnStep.querySelector("svg"); btnStep.innerHTML=""; btnStep.appendChild(svg); btnStep.append(t("step")); }
+  const btnReset = document.getElementById("btn-reset");
+  if(btnReset){ const svg=btnReset.querySelector("svg"); btnReset.innerHTML=""; btnReset.appendChild(svg); btnReset.append(t("reset")); }
+  const btnSubmit = document.getElementById("btn-submit");
+  if(btnSubmit){ const svg=btnSubmit.querySelector("svg"); btnSubmit.innerHTML=""; btnSubmit.appendChild(svg); btnSubmit.append(t("submit")); }
+
+  // speed label
+  const speedEl = document.querySelector(".speed");
+  if(speedEl){
+    const inp = speedEl.querySelector("input");
+    speedEl.innerHTML = ""; speedEl.append(t("speed")+" "); speedEl.appendChild(inp);
+  }
+
+  // editor hint
+  const hint = document.querySelector(".ed-foot .hint");
+  if(hint) hint.textContent = t("edHint");
+
+  // reference sections
+  const refSums = document.querySelectorAll("#ref-zone details.ref > summary");
+  if(refSums[0]) refSums[0].textContent = t("refGCodes");
+  if(refSums[1]) refSums[1].textContent = t("refMCodes");
+  if(refSums[2]) refSums[2].textContent = t("refAddr");
+
+  // reference table cells (the description column)
+  const refKeys = [
+    ["refG00","refG01","refG2021","refG28","refG40","refG50","refG9697","refG9899"],
+    ["refM03","refM04","refM05","refM08","refM09","refM30"],
+    ["refX","refZ","refUW","refF","refS","refT"]
+  ];
+  const tables = document.querySelectorAll("#ref-zone table.ref-tbl");
+  tables.forEach((tbl,ti)=>{
+    const rows = tbl.querySelectorAll("tr");
+    rows.forEach((row,ri)=>{
+      if(refKeys[ti] && refKeys[ti][ri]){
+        const td = row.querySelectorAll("td")[1];
+        if(td) td.innerHTML = t(refKeys[ti][ri]);
+      }
+    });
+  });
+
+  // legend
+  const legSpans = document.querySelectorAll(".legend span");
+  const legKeys = ["legRapid","legFeed","legTarget"];
+  legSpans.forEach((sp,i)=>{
+    if(legKeys[i]){
+      const ico = sp.querySelector("i");
+      sp.innerHTML = ""; if(ico) sp.appendChild(ico); sp.append(t(legKeys[i]));
+    }
+  });
+
+  // teach me button
+  const teachBtn = document.getElementById("btn-teach");
+  if(teachBtn) teachBtn.textContent = t("teachBtn");
+
+  // solution button
+  const solBtn = document.getElementById("btn-solution");
+  if(solBtn){ const svg=solBtn.querySelector("svg"); solBtn.innerHTML=""; solBtn.appendChild(svg); solBtn.append("\n          "+t("solutionBtn")+"\n        "); }
+
+  // close buttons
+  document.querySelectorAll(".close").forEach(b=>{
+    if(!b.querySelector("svg")) b.textContent = t("close");
+  });
+
+  // teach modal head
+  const tt = document.querySelector(".teach-title");
+  if(tt) tt.textContent = t("teachTitle");
+  const ts = document.querySelector(".teach-sub");
+  if(ts) ts.textContent = t("teachSub");
+
+  // progress overlay
+  const ph = document.querySelector(".phead h2");
+  if(ph) ph.textContent = t("progTitle");
+  const ps = document.querySelector(".phead .psub");
+  if(ps) ps.textContent = t("progSub");
+
+  // chat placeholder + send button
+  const chatInput = document.getElementById("chatq");
+  if(chatInput) chatInput.placeholder = t("chatPlaceholder");
+  const chatSendBtn = document.getElementById("chatsend");
+  if(chatSendBtn) chatSendBtn.textContent = t("chatSend");
+
+  // chat quick chips
+  const qz = document.getElementById("chatquick");
+  if(qz){
+    const chips = qz.querySelectorAll(".chip");
+    const quickTexts = t("chatQuick");
+    chips.forEach((c,i)=>{ if(quickTexts[i]) c.textContent = quickTexts[i]; });
+  }
+
+  // lang selector highlight
+  document.querySelectorAll("#lang-sel .lb").forEach(b=>{
+    b.classList.toggle("active", b.dataset.lang===curLang);
+  });
+
+  // update draw note if level is loaded
+  if(typeof LV !== "undefined" && LV) updateDrawNote(LV);
+}
+
+// draw note helper (also called from renderDrawing)
+function updateDrawNote(level){
+  const t = k => T(k);
+  let extra="";
+  if(level.target.bore){ extra+=` · ${t("bore")} Ø${Math.max(...level.target.bore.map(p=>p.dia))}`; }
+  if(level.target.threads){ extra+=" · "+level.target.threads.map(th=>`${(th.majorDia||th.minorDia+2)}×${th.pitch} ${th.side} ${t("thread")}`).join(", "); }
+  if(level.target.slots){ extra+=` · ${t("keyslot")} `+level.target.slots.map(s=>`${Math.abs(s.z1-s.z0)}×${s.depth}mm`).join(", "); }
+  document.getElementById("draw-note").innerHTML =
+    `${t("stock")}: Ø${level.stock.diameter} × ${level.stock.length} mm · ${level.stock.material}${extra}. ${t("dims")}. ${t("tol")} ±${level.tolerance} mm.`;
+}
+
+// wire up lang selector buttons
+document.getElementById("lang-sel").addEventListener("click", e=>{
+  const btn = e.target.closest(".lb");
+  if(!btn) return;
+  applyLang(btn.dataset.lang);
+  // re-render chat greeting if it was the first message
+  if(chatSeeded){
+    const firstMsg = document.querySelector("#chatlog .chat-msg.bot");
+    if(firstMsg) firstMsg.innerHTML = T("chatGreeting");
+  }
+});
 
 /* ============================================================
    2. GEOMETRY  (per-level sampling grid)
@@ -2107,12 +2543,7 @@ function renderDrawing(level){
       ${dims}
     </svg>`;
   document.getElementById("drawing").innerHTML = svg;
-  let extra="";
-  if(level.target.bore){ extra+=` · bore Ø${Math.max(...level.target.bore.map(p=>p.dia))}`; }
-  if(level.target.threads){ extra+=" · "+level.target.threads.map(t=>`${(t.majorDia||t.minorDia+2)}×${t.pitch} ${t.side} thread`).join(", "); }
-  if(level.target.slots){ extra+=" · keyslot "+level.target.slots.map(s=>`${Math.abs(s.z1-s.z0)}×${s.depth}mm`).join(", "); }
-  document.getElementById("draw-note").innerHTML =
-    `Stock: Ø${level.stock.diameter} × ${level.stock.length} mm · ${level.stock.material}${extra}. Dimensions in mm. Tol ±${level.tolerance} mm.`;
+  updateDrawNote(level);
 }
 function arrow(x,y,dx,dy){
   const s=5;
@@ -2384,7 +2815,7 @@ function updateDRO(){
   const fmt = v => (v<0?"-":" ")+Math.abs(v).toFixed(3);
   const el=document.getElementById("dro");
   el.innerHTML =
-    `<div class="hd">Actual Position (Absolute)</div>`+
+    `<div class="hd">${T("droHead")}</div>`+
     `<div class="big">X <b>${fmt(t.r*2)}</b></div>`+
     `<div class="big">Z <b>${fmt(t.z)}</b></div>`+
     `<div class="sep"></div>`+
@@ -2401,9 +2832,12 @@ function updateDRO(){
    ============================================================ */
 let INTERP=null, TARGET=null;
 const getCode=()=>document.getElementById("code").value;
-function setStatus(s){ document.getElementById("sim-status").textContent=s; }
+function setStatus(s){
+  const map={READY:"ready",RUNNING:"running",PAUSED:"paused"};
+  document.getElementById("sim-status").textContent = map[s] ? T(map[s]) : s;
+}
 function setPlayLabel(running){
-  document.getElementById("play-label").textContent = running?"Pause":"Play";
+  document.getElementById("play-label").textContent = running?T("pause"):T("play");
 }
 
 function syncGutter(){
@@ -2454,13 +2888,13 @@ function doSubmit(){
 function showSolution(){
   const rhead=document.getElementById("rhead");
   rhead.className="rhead pass";
-  document.getElementById("verdict").textContent = "✔ Solution";
-  document.getElementById("verdict-sub").innerHTML = "Here is a professional program that solves this level. Study it, then try to write your own version.";
-  let h="<h4>Complete Working Program</h4>";
+  document.getElementById("verdict").textContent = T("solutionTitle");
+  document.getElementById("verdict-sub").innerHTML = T("solutionSub");
+  let h=`<h4>${T("completeProgram")}</h4>`;
   h+=`<div class="modelcode">${escapeHtml(LV.model)}</div>`;
   if(LV.steps && LV.steps.length){
-    h+=`<h4>How it works</h4>`;
-    h+=`<div class="callout c-note"><span class="t">Program structure</span>`;
+    h+=`<h4>${T("howItWorks")}</h4>`;
+    h+=`<div class="callout c-note"><span class="t">${T("progStructure")}</span>`;
     h+=`<ul style="margin:6px 0;padding-left:18px;font-size:13px">`;
     LV.steps.forEach(s=>h+=`<li>${s}</li>`);
     h+=`</ul></div>`;
@@ -2473,57 +2907,55 @@ function showResult(sc, cch){
   const accepted=cch.accepted;
   const rhead=document.getElementById("rhead");
   rhead.className="rhead "+(accepted?"pass":"fail");
-  document.getElementById("verdict").textContent = accepted?"✔ Part Accepted":"✘ Rejected";
+  document.getElementById("verdict").textContent = accepted?T("accepted"):T("rejected");
   document.getElementById("verdict-sub").innerHTML = accepted
-    ? "The finished profile matches the drawing within tolerance."
-    : (cch.hardErrs.length
-        ? "A machine error stopped this being a good part — see Must Fix."
-        : "The finished profile is out of tolerance — see below.");
+    ? T("acceptedSub")
+    : (cch.hardErrs.length ? T("rejectedCrash") : T("rejectedDim"));
   let h="";
 
   // dimensional report (reported truthfully even when a crash rejects the part)
-  h+=`<h4>Dimensional Check</h4>`;
+  h+=`<h4>${T("dimCheck")}</h4>`;
   if(sc.pass){
-    h+=`<div class="callout c-good"><span class="t">In tolerance</span>Every feature — diameters, lengths${sc.bore?', bore':''}${sc.thread?', thread':''}${sc.slot?', keyslot':''} — is within ±${sc.tol} mm.</div>`;
+    h+=`<div class="callout c-good"><span class="t">${T("inTol")}</span>${T("everyFeat")}${sc.bore?', '+T("bore"):''}${sc.thread?', '+T("thread"):''}${sc.slot?', '+T("keyslot"):''} — ${T("isWithin")} ±${sc.tol} mm.</div>`;
   } else {
     const o=sc.outer;
-    if(o.faceLeft>sc.tol) h+=`<div class="callout c-warn"><span class="t">End not faced</span>About ${o.faceLeft.toFixed(2)} mm of stock is left on the end face (near Z${o.faceAt.toFixed(1)}). Face across the centre to Z0.</div>`;
-    if(o.excess>sc.tol) h+=`<div class="callout c-warn"><span class="t">Too much stock left</span>The OD is ~${(o.excess*2).toFixed(2)} mm oversize near Z${(o.exAt??0).toFixed(1)} — remove more material.</div>`;
-    if(o.gouge>sc.tol) h+=`<div class="callout c-warn"><span class="t">Scrap — cut undersize</span>The OD is ~${(o.gouge*2).toFixed(2)} mm undersize near Z${(o.goAt??0).toFixed(1)}. Check your X (it's a diameter).</div>`;
+    if(o.faceLeft>sc.tol) h+=`<div class="callout c-warn"><span class="t">${T("notFaced")}</span>About ${o.faceLeft.toFixed(2)} mm of stock is left on the end face (near Z${o.faceAt.toFixed(1)}). Face across the centre to Z0.</div>`;
+    if(o.excess>sc.tol) h+=`<div class="callout c-warn"><span class="t">${T("tooMuchStock")}</span>The OD is ~${(o.excess*2).toFixed(2)} mm oversize near Z${(o.exAt??0).toFixed(1)} — remove more material.</div>`;
+    if(o.gouge>sc.tol) h+=`<div class="callout c-warn"><span class="t">${T("cutUndersize")}</span>The OD is ~${(o.gouge*2).toFixed(2)} mm undersize near Z${(o.goAt??0).toFixed(1)}. Check your X (it's a diameter).</div>`;
     if(sc.bore && !sc.bore.pass){
-      if(sc.bore.tooSmall>sc.tol) h+=`<div class="callout c-warn"><span class="t">Bore too small</span>The hole is ~${(sc.bore.tooSmall*2).toFixed(2)} mm undersize near Z${(sc.bore.smAt??0).toFixed(1)} — drill/bore larger or deeper.</div>`;
-      if(sc.bore.tooBig>sc.tol) h+=`<div class="callout c-warn"><span class="t">Bore too big</span>The hole is ~${(sc.bore.tooBig*2).toFixed(2)} mm oversize near Z${(sc.bore.bgAt??0).toFixed(1)} — scrap.</div>`;
+      if(sc.bore.tooSmall>sc.tol) h+=`<div class="callout c-warn"><span class="t">${T("boreTooSmall")}</span>The hole is ~${(sc.bore.tooSmall*2).toFixed(2)} mm undersize near Z${(sc.bore.smAt??0).toFixed(1)} — drill/bore larger or deeper.</div>`;
+      if(sc.bore.tooBig>sc.tol) h+=`<div class="callout c-warn"><span class="t">${T("boreTooLarge")}</span>The hole is ~${(sc.bore.tooBig*2).toFixed(2)} mm oversize near Z${(sc.bore.bgAt??0).toFixed(1)} — scrap.</div>`;
     }
-    if(sc.thread && !sc.thread.pass) sc.thread.msgs.forEach(mm=>h+=`<div class="callout c-warn"><span class="t">Thread</span>${mm}</div>`);
-    if(sc.slot && !sc.slot.pass) sc.slot.msgs.forEach(mm=>h+=`<div class="callout c-warn"><span class="t">Keyslot</span>${mm}</div>`);
+    if(sc.thread && !sc.thread.pass) sc.thread.msgs.forEach(mm=>h+=`<div class="callout c-warn"><span class="t">${T("thread")}</span>${mm}</div>`);
+    if(sc.slot && !sc.slot.pass) sc.slot.msgs.forEach(mm=>h+=`<div class="callout c-warn"><span class="t">${T("keyslot")}</span>${mm}</div>`);
   }
 
   // must-fix (crashes, spindle-off cuts, missing M03)
   if(cch.hardErrs.length){
-    h+=`<h4>Must Fix</h4>`;
+    h+=`<h4>${T("mustFix")}</h4>`;
     cch.hardErrs.forEach(e=>h+=`<div class="callout c-warn"><span class="t">Error</span>${e}</div>`);
   }
   // warnings (won't stop the run but a pro would never leave them)
   if(cch.warns.length){
-    h+=`<h4>Warnings</h4>`;
+    h+=`<h4>${T("warnings")}</h4>`;
     cch.warns.forEach(e=>h+=`<div class="callout c-warn"><span class="t">Check</span>${e}</div>`);
   }
 
   // code review
   if(cch.professional){
-    h+=`<h4>Code Review</h4><div class="callout c-good"><span class="t">Professional</span>This is clean, professional-grade code: numbered program, safe start, spindle &amp; coolant sequenced, constant surface speed, and a proper home + <code class="i">M30</code> ending. Nicely done.</div>`;
+    h+=`<h4>${T("codeReview")}</h4><div class="callout c-good"><span class="t">${T("professional")}</span>${T("profMsg")}</div>`;
   } else if(cch.tips.length){
-    h+=`<h4>Suggestions — what a pro would add</h4>`;
-    cch.tips.forEach(t=>h+=`<div class="callout c-tip"><span class="t">Try</span>${t}</div>`);
+    h+=`<h4>${T("suggestions")}</h4>`;
+    cch.tips.forEach(tp=>h+=`<div class="callout c-tip"><span class="t">Try</span>${tp}</div>`);
   }
   if(cch.goods.length){
-    h+=`<h4>Done Well</h4><div class="callout c-note"><span class="t">Good habits</span>`+
+    h+=`<h4>${T("doneWell")}</h4><div class="callout c-note"><span class="t">${T("goodHabits")}</span>`+
        cch.goods.map(g=>"• "+g).join("<br>")+`</div>`;
   }
 
   // model program for reference when the part is rejected
   if(!accepted){
-    h+=`<h4>One Professional Solution</h4><div class="modelcode">${escapeHtml(LV.model)}</div>`;
+    h+=`<h4>${T("oneSolution")}</h4><div class="modelcode">${escapeHtml(LV.model)}</div>`;
   }
 
   document.getElementById("rbody").innerHTML=h;
@@ -2579,8 +3011,7 @@ function loadLevel(idx){
   play.running=false; setPlayLabel(false);
   setupGeometry(level);
   TARGET=buildTarget(level);
-  document.getElementById("lvl-num").textContent=level.id;
-  document.getElementById("lvl-title").textContent=level.title;
+  document.getElementById("lvl-chip").innerHTML=`${T("levelWord")} <b id="lvl-num">${level.id}</b> · <span id="lvl-title">${level.title}</span>`;
   document.getElementById("code").value=level.starter;
   document.getElementById("lvl-prev").disabled = curLevel===0;
   document.getElementById("lvl-next").disabled = curLevel===LEVELS.length-1;
@@ -2950,10 +3381,11 @@ async function chatAsk(q){
 }
 function seedChat(){
   if(chatSeeded) return; chatSeeded=true;
-  chatAppend("Hi! I'm your lathe coach — ask me <b>anything</b> about lathes and machining: G-code, tooling, speeds &amp; feeds, work holding, threading, finishes, or this part. Try <i>how do I cut a taper?</i> or <i>what insert for stainless?</i>, or tap a chip below.<span class='muted'>The AI coach is free — the first question may pop a quick one-time sign-in. No internet? You still get built-in help.</span>", "bot");
+  chatAppend(T("chatGreeting"), "bot");
   const qz=document.getElementById("chatquick");
-  CHAT_QUICK.forEach(t=>{ const c=document.createElement("button"); c.className="chip"; c.textContent=t;
-    c.addEventListener("click", ()=>{ chatAsk(t); }); qz.appendChild(c); });
+  const quickTexts = T("chatQuick");
+  quickTexts.forEach(txt=>{ const c=document.createElement("button"); c.className="chip"; c.textContent=txt;
+    c.addEventListener("click", ()=>{ chatAsk(txt); }); qz.appendChild(c); });
 }
 document.getElementById("chatsend").addEventListener("click", ()=>{ const i=document.getElementById("chatq"); chatAsk(i.value); i.value=""; });
 document.getElementById("chatq").addEventListener("keydown", e=>{ if(e.key==="Enter"){ const i=e.target; chatAsk(i.value); i.value=""; } });
