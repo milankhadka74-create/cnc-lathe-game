@@ -240,11 +240,11 @@
   textarea#code{flex:1;border:0;outline:0;resize:none;background:transparent;color:var(--grn);
     font-family:inherit;font-size:inherit;line-height:inherit;padding:12px 14px;tab-size:2;
     white-space:pre;overflow-wrap:normal;overflow-x:auto;caret-color:var(--grn)}
-  .ed-foot{display:flex;align-items:center;gap:10px;padding:10px 14px;
+  .ed-foot{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:10px 14px;
     background:linear-gradient(180deg,#101c24,#0c1620);
     border-top:1px solid rgba(56,189,248,.06)}
-  .ed-foot .hint{font-family:var(--mono);font-size:10.5px;color:#7f9aa6}
-  .ed-foot #btn-submit{margin-left:auto}
+  #btn-detail{display:inline-flex;align-items:center;justify-content:center;gap:7px;
+    font-size:12px;padding:9px 16px;line-height:1;border-radius:8px;box-shadow:var(--shadow-sm)}
 
   /* ---------- RESULT MODAL ---------- */
   .overlay{position:fixed;inset:0;background:rgba(8,14,18,.7);display:none;
@@ -335,6 +335,8 @@
     button.tb{padding:8px 12px;font-size:11px}
     .ed-foot{padding:8px 10px;flex-wrap:wrap}
     .ed-foot .hint{font-size:9.5px;flex:1 1 100%;order:2}
+    .ed-foot #btn-detail{order:1}
+    .ed-foot #btn-solution{order:1}
     .ed-foot #btn-submit{order:1}
     .chat-log{padding:10px}
     .chat-msg{max-width:92%;font-size:12.5px}
@@ -409,6 +411,29 @@
   .teach-content .cap{font-size:11.5px;color:#6f8a95;font-style:italic;margin:-2px 0 14px}
   .teach-content .isochip{display:inline-block;color:#fff;font-weight:700;font-family:var(--mono);
     width:22px;height:22px;line-height:22px;text-align:center;border-radius:4px;margin-right:6px}
+  /* ---------- DETAIL EXPLANATION ---------- */
+  #detail-overlay .teach{width:min(940px,96vw)}
+  #detail-content{flex:1;min-height:0;overflow-y:auto;padding:20px 24px;color:#1c2b31;font-size:13.5px;line-height:1.6}
+  #detail-content h3{font-family:var(--disp);text-transform:uppercase;letter-spacing:.06em;font-size:12.5px;
+    color:var(--amber);margin:18px 0 8px}
+  #detail-content h3:first-child{margin-top:0}
+  #detail-content p{margin:0 0 8px}
+  .dl-block{margin:0 0 12px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--card)}
+  .dl-line{font-family:var(--mono);font-size:12.5px;color:var(--grn);background:var(--screen);
+    padding:8px 12px;white-space:pre;overflow-x:auto;letter-spacing:.01em}
+  .dl-line .cmt{color:var(--scr-mute)}
+  .dl-bits{margin:0;padding:0}
+  .dl-bits li{list-style:none;margin:0;padding:7px 12px 7px 34px;border-top:1px solid var(--line);
+    font-size:13px;position:relative}
+  .dl-bits li:first-child{border-top:0}
+  .dl-bits li::before{content:"›";position:absolute;left:15px;color:var(--amber);font-weight:700}
+  .dl-bits li b{font-family:var(--mono);font-size:12px;color:var(--steel-d);background:rgba(10,40,55,.07);
+    padding:1px 6px;border-radius:3px;margin-right:2px}
+  @media(max-width:640px){
+    #detail-content{padding:14px 14px;font-size:13px}
+    .dl-bits li{padding-left:28px}
+    .dl-bits li::before{left:12px}
+  }
   @media(max-width:640px){
     .teach-body{flex-direction:column}
     .teach-nav{width:auto;display:flex;gap:6px;overflow-x:auto;border-right:0;border-bottom:1px solid var(--line)}
@@ -555,9 +580,13 @@
           <textarea id="code" spellcheck="false" autocapitalize="characters"></textarea>
         </div>
         <div class="ed-foot">
-          <span class="hint">Write FANUC turning G-code · X is a diameter · press Play to simulate</span>
+          <button class="teachbtn" id="btn-detail" title="Line-by-line explanation of the solution">📖 Detail Explanation</button>
           <button class="tb go" id="btn-submit">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z"/></svg>Submit</button>
+          <button class="tb" id="btn-solution">
+            <svg viewBox="0 0 24 24" fill="currentColor" style="width:11px;height:11px"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
+            Solution
+          </button>
         </div>
       </div>
     </section>
@@ -568,10 +597,7 @@
         <span class="dot"></span>
         <span class="t">💬 Ask Coach</span>
         <button class="teachbtn" id="btn-teach" title="Learn metal-cutting theory">📚 Teach Me</button>
-        <button class="tb" id="btn-solution" style="margin-left:auto;padding:5px 10px;font-size:11px">
-          <svg viewBox="0 0 24 24" fill="currentColor" style="width:11px;height:11px"><path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/></svg>
-          Solution
-        </button></div>
+      </div>
       <div class="body" id="chatpane">
         <div class="chat-log" id="chatlog"></div>
         <div class="chat-quick" id="chatquick"></div>
@@ -613,6 +639,18 @@
       <nav class="teach-nav" id="teach-nav"></nav>
       <div class="teach-content" id="teach-content"></div>
     </div>
+  </div>
+</div>
+
+<!-- DETAIL EXPLANATION MODAL -->
+<div class="overlay" id="detail-overlay">
+  <div class="teach">
+    <div class="teach-head">
+      <div><div class="teach-title">📖 Detail Explanation</div>
+        <div class="teach-sub" id="detail-sub">—</div></div>
+      <button class="close" id="close-detail">Close</button>
+    </div>
+    <div class="teach-content" id="detail-content"></div>
   </div>
 </div>
 
@@ -1486,6 +1524,97 @@ M30`
   }
 ];
 
+/* ---- annotated solutions: one starter-style hint per model line ---- */
+const MODEL_HINTS = {
+  1: ["", "METRIC, COMP OFF, FEED/REV", "HOME", "OD ROUGHING TOOL", "CLAMP MAX RPM",
+      "CONST SURFACE SPEED, SPINDLE CW", "RAPID TO FACE, COOLANT ON", "FACE ACROSS CENTRE",
+      "BACK OFF IN Z", "RAPID TO FINISH DIAMETER", "TURN D40 OVER 30MM", "FACE OUT THE SHOULDER",
+      "RETRACT, COOLANT OFF", "SPINDLE STOP", "HOME", "END OF PROGRAM"],
+  2: ["", "METRIC, COMP OFF, FEED/REV", "HOME", "OD ROUGHING TOOL", "CLAMP MAX RPM",
+      "CONST SURFACE SPEED, SPINDLE CW", "RAPID TO FACE, COOLANT ON", "FACE ACROSS CENTRE",
+      "CLEAR IN Z", "RAPID TO D50 SECTION", "TURN D50 SECTION TO Z-35", "RETRACT IN X",
+      "RAPID BACK TO Z", "RAPID TO D40 NOSE", "TURN D40 NOSE TO Z-20", "RETRACT",
+      "GO HOME, COOLANT OFF", "SPINDLE STOP", "HOME", "END OF PROGRAM"],
+  3: ["", "METRIC, COMP OFF, FEED/REV", "HOME", "OD ROUGHING TOOL", "CLAMP MAX RPM",
+      "CONST SURFACE SPEED, SPINDLE CW", "RAPID TO FACE, COOLANT ON", "FACE ACROSS CENTRE",
+      "CLEAR IN Z", "RAPID TO NOSE OD D26", "FEED TO THE FACE Z0", "CUT 2MM 45DEG CHAMFER",
+      "TURN D30 BODY TO Z-25", "FACE OUT THE SHOULDER", "RETRACT, COOLANT OFF", "SPINDLE STOP",
+      "HOME", "END OF PROGRAM"],
+  4: ["", "METRIC, COMP OFF, FEED/REV", "HOME", "OD TURNING TOOL", "CLAMP MAX RPM",
+      "CONST SURFACE SPEED, SPINDLE CW", "RAPID TO FACE, COOLANT ON", "FACE ACROSS CENTRE",
+      "CLEAR IN Z", "RAPID TO NOSE D30", "FEED TO THE FACE Z0", "CUT TAPER TO D50 OVER 40MM",
+      "RETRACT, COOLANT OFF", "SPINDLE STOP", "HOME", "END OF PROGRAM"],
+  5: ["", "METRIC, COMP OFF, FEED/REV", "HOME", "OD TURNING TOOL", "CLAMP MAX RPM",
+      "CONST SURFACE SPEED, SPINDLE CW", "RAPID TO FACE, COOLANT ON", "FACE ACROSS CENTRE",
+      "CLEAR IN Z", "RAPID TO D40", "TURN D40 TO Z-40", "RETRACT", "PARK",
+      "INDEX TO GROOVE TOOL W4", "FIXED RPM, SPINDLE CW", "POSITION AT GROOVE CENTRE Z-15",
+      "GROOVE DOWN TO D30", "RETRACT", "PARK, COOLANT OFF", "SPINDLE STOP", "HOME", "END OF PROGRAM"],
+  6: ["", "METRIC, COMP OFF, FEED/REV", "HOME", "FACING TOOL", "CLAMP MAX RPM",
+      "CONST SURFACE SPEED, SPINDLE CW", "RAPID TO FACE, COOLANT ON", "FACE ACROSS CENTRE",
+      "PARK", "INDEX TO D20 DRILL", "FIXED RPM, SPINDLE CW", "RAPID TO CENTRE X0, CLEAR",
+      "PECK RETRACT AMOUNT", "PECK DRILL TO Z-40", "RETRACT OFF CENTRE", "PARK, COOLANT OFF",
+      "SPINDLE STOP", "HOME", "END OF PROGRAM"],
+  7: ["", "METRIC, COMP OFF, FEED/REV", "HOME", "FACING TOOL", "CLAMP MAX RPM",
+      "CONST SURFACE SPEED, SPINDLE CW", "RAPID TO FACE, COOLANT ON", "FACE ACROSS CENTRE",
+      "PARK", "INDEX TO D20 DRILL", "FIXED RPM, SPINDLE CW", "RAPID TO CENTRE X0, CLEAR",
+      "PECK RETRACT AMOUNT", "PECK DRILL TO Z-42", "RETRACT OFF CENTRE", "PARK",
+      "INDEX TO BORING BAR", "CONST SURFACE SPEED, SPINDLE CW", "ENTER HOLE AT D30",
+      "BORE TO Z-30", "BACK OFF THE BORE", "RETRACT", "PARK, COOLANT OFF", "SPINDLE STOP",
+      "HOME", "END OF PROGRAM"],
+  8: ["", "METRIC, COMP OFF, FEED/REV", "HOME", "OD TURNING TOOL", "CLAMP MAX RPM",
+      "CONST SURFACE SPEED, SPINDLE CW", "RAPID TO FACE, COOLANT ON", "FACE ACROSS CENTRE",
+      "CLEAR IN Z", "RAPID TO D24 MAJOR", "TURN D24 TO Z-28", "SHOULDER OUT", "PARK",
+      "INDEX TO THREAD TOOL", "FIXED RPM, SPINDLE CW", "POSITION CLEAR OF THREAD",
+      "G76 SETUP - ANGLE AND PASSES", "G76 CUT M24 X 2 TO Z-25", "PARK, COOLANT OFF",
+      "SPINDLE STOP", "HOME", "END OF PROGRAM"],
+  9: ["", "METRIC, COMP OFF, FEED/REV", "HOME", "FACING TOOL", "CLAMP MAX RPM",
+      "CONST SURFACE SPEED, SPINDLE CW", "RAPID TO FACE, COOLANT ON", "FACE ACROSS CENTRE",
+      "PARK", "INDEX TO TAP DRILL D22.5", "FIXED RPM, SPINDLE CW", "RAPID TO CENTRE X0, CLEAR",
+      "PECK RETRACT AMOUNT", "PECK DRILL TO Z-30", "RETRACT OFF CENTRE", "PARK",
+      "INDEX TO ID THREAD TOOL", "FIXED RPM, SPINDLE CW", "ENTER HOLE, CLEAR",
+      "G76 SETUP - ANGLE AND PASSES", "G76 CUT M24 X 1.5 ID TO Z-25", "RETRACT",
+      "PARK, COOLANT OFF", "SPINDLE STOP", "HOME", "END OF PROGRAM"],
+  10: ["", "METRIC, COMP OFF, FEED/REV", "HOME", "OD TURNING TOOL", "CLAMP MAX RPM",
+       "CONST SURFACE SPEED, SPINDLE CW", "RAPID TO FACE, COOLANT ON", "FACE ACROSS CENTRE",
+       "CLEAR IN Z", "RAPID TO D40", "TURN/CLEAN D40", "PARK", "INDEX TO LIVE END MILL D8",
+       "STOP MAIN SPINDLE", "LIVE TOOL + C-AXIS ON", "INDEX TO C0", "ABOVE SLOT START Z-10",
+       "PLUNGE 5MM DEEP X30", "MILL SLOT ALONG Z TO Z-30", "RETRACT", "PARK, COOLANT OFF",
+       "SPINDLE STOP", "HOME", "END OF PROGRAM"],
+  11: ["", "METRIC, PLANE, FEED/REV", "HOME", "OD TURNING TOOL", "CLAMP MAX RPM",
+       "CONST SURFACE SPEED, SPINDLE CW", "RAPID CLEAR, COOLANT ON", "RAPID TO THE NOSE D40",
+       "FEED TO Z0", "G03 ARC R100 OUT TO D220 - USE I,K", "STRAIGHT TO Z-61",
+       "FACE OUT TO THE RIM", "RETRACT, COOLANT OFF", "SPINDLE STOP", "HOME", "END OF PROGRAM"],
+  12: ["", "METRIC, PLANE, FEED/REV", "HOME", "OD TURNING TOOL", "CLAMP MAX RPM",
+       "CONST SURFACE SPEED, SPINDLE CW", "APPROACH CLEAR OF STOCK, COOLANT ON",
+       "G71 DEPTH OF CUT AND RETRACT", "G71 P10 Q20 - FINISH STOCK AND FEED",
+       "N10 PROFILE START AT CENTRE", "CONE OUT TO D24", "STRAIGHT TO Z-18", "R5 FILLET UP TO D34",
+       "SHOULDER OUT TO D40", "N20 RETRACT ABOVE THE PART", "G70 P10 Q20 - FINISH PASS",
+       "RETRACT, COOLANT OFF", "SPINDLE STOP", "HOME", "END OF PROGRAM"],
+  13: ["", "METRIC, PLANE, FEED/REV", "HOME", "OD TURNING TOOL", "CLAMP MAX RPM",
+       "CONST SURFACE SPEED, SPINDLE CW", "APPROACH CLEAR OF THE FACE, COOLANT ON",
+       "G72 DEPTH OF CUT AND RETRACT", "G72 P30 Q40 - FINISH STOCK AND FEED", "N30 START AT D80",
+       "FEED TO Z0", "TAPER OUT TO D120", "STRAIGHT TO Z-20", "R5 UP TO D130",
+       "OUT TO THE D150 RIM", "N40 RETRACT CLEAR", "G70 P30 Q40 - FINISH PASS",
+       "RETRACT, COOLANT OFF", "SPINDLE STOP", "HOME", "END OF PROGRAM"],
+  14: ["", "METRIC, PLANE, FEED/REV", "HOME", "OD TURNING TOOL", "CLAMP MAX RPM",
+       "CONST SURFACE SPEED, SPINDLE CW", "APPROACH CLEAR, COOLANT ON", "G71 DEPTH AND RETRACT",
+       "G71 P40 Q42 - FINISH STOCK AND FEED", "N40 START AT D10", "FEED TO Z0",
+       "G03 R5 HUMP TO Z-8", "G02 R5 VALLEY TO Z-16", "G03 R5 HUMP TO Z-24",
+       "G02 R5 VALLEY TO Z-32", "STRAIGHT TO Z-33.5", "OUT TO THE D16 SHANK", "N42 RETRACT",
+       "G70 P40 Q42 - FINISH PASS", "RETRACT, COOLANT OFF", "SPINDLE STOP", "HOME", "END OF PROGRAM"]
+};
+/* zip model lines with their hints: strip the short inline comment, pad, append the hint */
+function annotatedModel(lv){
+  const lines = lv.model.trim().split("\n");
+  const hints = MODEL_HINTS[lv.id] || [];
+  const w = Math.max(24, ...lines.map(l=>l.replace(/\s*\([^)]*\)\s*$/, "").length)) + 3;
+  return lines.map((ln,i)=>{
+    const h = hints[i];
+    if(!h) return ln;
+    return ln.replace(/\s*\([^)]*\)\s*$/, "").padEnd(w) + "(" + h + ")";
+  }).join("\n");
+}
+
 /* ============================================================
    1b. PROGRESS TRACKER  (stars, completion, mini-bar)
    ============================================================ */
@@ -1649,7 +1778,16 @@ const LANG = {
     droHead:"ACTUAL POSITION (ABSOLUTE)",
     // every feat
     everyFeat:"Every feature — diameters, lengths",
-    isWithin:"is within"
+    isWithin:"is within",
+    // detail explanation
+    detailBtn:"📖 Detail Explanation",
+    detailTitle:"📖 Detail Explanation",
+    detailJob:"The Job",
+    detailBreakdown:"Line-by-Line Breakdown",
+    detailSub:"what every line of the solution does",
+    detailJobText:"machined from Ø{0} × {1} mm {2}. Tolerance ±{3} mm on the radius.",
+    commentWord:"Comment",
+    detailComment:"a comment describing the operation; the control ignores text inside parentheses."
   },
   hi: {
     kick:"FANUC · 0i-TF · मैनुअल टर्निंग",
@@ -1722,7 +1860,15 @@ const LANG = {
     chatQuick:["इस लेवल के लिए हिंट","G96 क्या है?","स्टील के लिए गति और फ़ीड?","एल्युमिनियम के लिए कौन सा इंसर्ट?","चैटर कैसे रोकें?","मेरी टॉलरेंस क्या है?"],
     droHead:"वास्तविक स्थिति (एब्सोल्यूट)",
     everyFeat:"सभी फ़ीचर — डायमीटर, लंबाई",
-    isWithin:"के भीतर है"
+    isWithin:"के भीतर है",
+    detailBtn:"📖 विस्तृत व्याख्या",
+    detailTitle:"📖 विस्तृत व्याख्या",
+    detailJob:"कार्य",
+    detailBreakdown:"लाइन-दर-लाइन विवरण",
+    detailSub:"समाधान की हर पंक्ति क्या करती है",
+    detailJobText:"Ø{0} × {1} mm {2} से मशीन किया गया। त्रिज्या पर टॉलरेंस ±{3} mm।",
+    commentWord:"टिप्पणी",
+    detailComment:"ऑपरेशन का वर्णन करने वाली टिप्पणी; नियंत्रण कोष्ठक के अंदर के पाठ को अनदेखा करता है।"
   },
   fi: {
     kick:"FANUC · 0i-TF · Manuaalisorvaus",
@@ -1795,7 +1941,15 @@ const LANG = {
     chatQuick:["Vinkki tälle tasolle","Mikä on G96?","Nopeudet ja syötöt teräkselle?","Mikä terä alumiinille?","Miten estän värinän?","Mikä on toleranssini?"],
     droHead:"TODELLINEN SIJAINTI (ABSOLUUTTINEN)",
     everyFeat:"Kaikki piirteet — halkaisijat, pituudet",
-    isWithin:"on sisällä"
+    isWithin:"on sisällä",
+    detailBtn:"📖 Yksityiskohtainen selitys",
+    detailTitle:"📖 Yksityiskohtainen selitys",
+    detailJob:"Työ",
+    detailBreakdown:"Rivi riviltä -selitys",
+    detailSub:"mitä ratkaisun jokainen rivi tekee",
+    detailJobText:"koneistettu aihiosta Ø{0} × {1} mm ({2}). Toleranssi ±{3} mm säteellä.",
+    commentWord:"Kommentti",
+    detailComment:"toimintoa kuvaava kommentti; ohjaus jättää sulkujen sisällä olevan tekstin huomiotta."
   }
 };
 
@@ -1907,6 +2061,10 @@ function applyLang(lang){
   const solBtn = document.getElementById("btn-solution");
   if(solBtn){ const svg=solBtn.querySelector("svg"); solBtn.innerHTML=""; solBtn.appendChild(svg); solBtn.append("\n          "+t("solutionBtn")+"\n        "); }
 
+  // detail explanation button
+  const detailBtn = document.getElementById("btn-detail");
+  if(detailBtn) detailBtn.textContent = t("detailBtn");
+
   // close buttons
   document.querySelectorAll(".close").forEach(b=>{
     if(!b.querySelector("svg")) b.textContent = t("close");
@@ -1917,6 +2075,11 @@ function applyLang(lang){
   if(tt) tt.textContent = t("teachTitle");
   const ts = document.querySelector(".teach-sub");
   if(ts) ts.textContent = t("teachSub");
+
+  // detail explanation modal head + live re-render if open
+  const dt = document.querySelector("#detail-overlay .teach-title");
+  if(dt) dt.textContent = t("detailTitle");
+  if(document.getElementById("detail-overlay").classList.contains("show")) openDetail();
 
   // progress overlay
   const ph = document.querySelector(".phead h2");
@@ -2891,7 +3054,7 @@ function showSolution(){
   document.getElementById("verdict").textContent = T("solutionTitle");
   document.getElementById("verdict-sub").innerHTML = T("solutionSub");
   let h=`<h4>${T("completeProgram")}</h4>`;
-  h+=`<div class="modelcode">${escapeHtml(LV.model)}</div>`;
+  h+=`<div class="modelcode">${escapeHtml(annotatedModel(LV))}</div>`;
   if(LV.steps && LV.steps.length){
     h+=`<h4>${T("howItWorks")}</h4>`;
     h+=`<div class="callout c-note"><span class="t">${T("progStructure")}</span>`;
@@ -2955,7 +3118,7 @@ function showResult(sc, cch){
 
   // model program for reference when the part is rejected
   if(!accepted){
-    h+=`<h4>${T("oneSolution")}</h4><div class="modelcode">${escapeHtml(LV.model)}</div>`;
+    h+=`<h4>${T("oneSolution")}</h4><div class="modelcode">${escapeHtml(annotatedModel(LV))}</div>`;
   }
 
   document.getElementById("rbody").innerHTML=h;
@@ -3240,6 +3403,291 @@ document.getElementById("close-teach").addEventListener("click", ()=>document.ge
 document.getElementById("teach-overlay").addEventListener("click", e=>{ if(e.target.id==="teach-overlay") document.getElementById("teach-overlay").classList.remove("show"); });
 
 /* ============================================================
+   10c. DETAIL EXPLANATION  (line-by-line breakdown of the solution)
+   ============================================================ */
+const CODE_EXPLAIN = {
+  en: {
+    G00:"Rapid traverse positioning — a fast move through air at maximum rate. It never cuts; it only positions the tool.",
+    G01:"Linear interpolation — a straight cutting move at the feed rate set by F.",
+    G02:"Circular interpolation, clockwise — cuts a clockwise arc (size with R, or with the I,K centre).",
+    G03:"Circular interpolation, counter-clockwise — cuts a counter-clockwise arc (size with R, or with the I,K centre).",
+    G18:"Selects the ZX plane — the normal plane for turning, so arcs curve in Z–X.",
+    G20:"Sets units to inches.",
+    G21:"Sets units to millimetres (mm).",
+    G28:"Return to the machine reference point (home position).",
+    G40:"Cancels tool-nose-radius compensation.",
+    G41:"Turns on tool-nose-radius compensation (left).",
+    G42:"Turns on tool-nose-radius compensation (right).",
+    G50:"Sets the maximum spindle-speed limit (clamps RPM) so the spindle cannot over-speed.",
+    G70:"Finishing cycle — runs the P–Q profile once for the final clean-up pass.",
+    G71:"OD roughing cycle — removes material in parallel passes down to a finish allowance.",
+    G72:"Facing roughing cycle — the facing-direction twin of G71.",
+    G74:"Peck-drilling cycle (on centre) — pecks in and retracts to clear chips.",
+    G75:"Grooving / part-off cycle — plunges in X to the groove bottom, pecking to clear chips.",
+    G76:"Threading cycle — sinks the thread form in many passes (F = the pitch/lead).",
+    G96:"Constant Surface Speed (CSS) — the control adjusts RPM as the diameter changes to hold the cutting speed (vc = π·d·n/1000).",
+    G97:"Fixed RPM mode — a constant spindle speed, used for drilling, threading and grooving.",
+    G98:"Feed per minute mode.",
+    G99:"Feed per revolution mode (mm/rev) — the normal mode for turning.",
+    M03:"Spindle ON, clockwise (forward) — the normal direction for OD turning.",
+    M04:"Spindle ON, counter-clockwise (reverse).",
+    M05:"Spindle STOP.",
+    M08:"Coolant ON.",
+    M09:"Coolant OFF.",
+    M13:"Live tooling + C-axis ON (for milling a keyslot).",
+    M30:"End of program + rewind — resets the program back to the top."
+  },
+  hi: {
+    G00:"रैपिड ट्रैवर्स पोजीशनिंग — अधिकतम गति पर हवा में तेज़ चाल। यह काटती नहीं; केवल टूल को स्थिति में लाती है।",
+    G01:"लीनियर इंटरपोलेशन — F द्वारा निर्धारित फ़ीड दर पर सीधी कटाई चाल।",
+    G02:"सर्कुलर इंटरपोलेशन, क्लॉकवाइज़ — दक्षिणावर्त चाप काटता है (R से या I,K केंद्र से आकार)।",
+    G03:"सर्कुलर इंटरपोलेशन, काउंटर-क्लॉकवाइज़ — वामावर्त चाप काटता है (R से या I,K केंद्र से आकार)।",
+    G18:"ZX प्लेन चुनता है — टर्निंग का सामान्य प्लेन, ताकि चाप Z–X में मुड़ें।",
+    G20:"इकाइयाँ इंच में सेट करता है।",
+    G21:"इकाइयाँ मिलीमीटर (mm) में सेट करता है।",
+    G28:"मशीन संदर्भ बिंदु (होम पोजीशन) पर लौटता है।",
+    G40:"टूल-नोज़-रेडियस कम्पन्सेशन रद्द करता है।",
+    G41:"टूल-नोज़-रेडियस कम्पन्सेशन (बाएँ) चालू करता है।",
+    G42:"टूल-नोज़-रेडियस कम्पन्सेशन (दाएँ) चालू करता है।",
+    G50:"अधिकतम स्पिंडल-गति सीमा (RPM क्लैंप) सेट करता है ताकि स्पिंडल ओवर-स्पीड न हो।",
+    G70:"फिनिशिंग साइकिल — अंतिम साफ़ पास के लिए P–Q प्रोफ़ाइल को एक बार चलाता है।",
+    G71:"OD रफिंग साइकिल — समानांतर पास में सामग्री हटाकर फिनिश अलाउंस तक लाता है।",
+    G72:"फेसिंग रफिंग साइकिल — G71 का फेसिंग-दिशा वाला जुड़वाँ।",
+    G74:"पेक-ड्रिलिंग साइकिल (केंद्र पर) — चिप्स साफ़ करने के लिए अंदर-बाहर पेक करता है।",
+    G75:"ग्रूविंग / पार्ट-ऑफ साइकिल — X में ग्रूव तल तक डुबकी लगाता है, चिप्स साफ़ करने के लिए पेक करता है।",
+    G76:"थ्रेडिंग साइकिल — कई पास में थ्रेड रूप बनाता है (F = पिच/लीड)।",
+    G96:"स्थिर सतह गति (CSS) — व्यास बदलने पर नियंत्रण RPM समायोजित करता है ताकि कटिंग गति बनी रहे (vc = π·d·n/1000)।",
+    G97:"स्थिर RPM मोड — एक समान स्पिंडल गति, ड्रिलिंग, थ्रेडिंग और ग्रूविंग के लिए।",
+    G98:"फ़ीड प्रति मिनट मोड।",
+    G99:"फ़ीड प्रति चक्कर मोड (mm/rev) — टर्निंग का सामान्य मोड।",
+    M03:"स्पिंडल चालू, क्लॉकवाइज़ (आगे) — OD टर्निंग की सामान्य दिशा।",
+    M04:"स्पिंडल चालू, काउंटर-क्लॉकवाइज़ (उल्टा)।",
+    M05:"स्पिंडल बंद।",
+    M08:"कूलेंट चालू।",
+    M09:"कूलेंट बंद।",
+    M13:"लाइव टूलिंग + C-अक्ष चालू (कीस्लॉट मिलिंग के लिए)।",
+    M30:"प्रोग्राम समाप्त + रीवाइंड — प्रोग्राम को शीर्ष पर रीसेट करता है।"
+  },
+  fi: {
+    G00:"Pikaliike (asemointi) — nopea liike ilmassa maksiminopeudella. Ei leikkaa; vain asemoi työkalun.",
+    G01:"Lineaarinen interpolointi — suora lastuamisliike F:n määräämällä syötöllä.",
+    G02:"Ympyräinterpolointi, myötäpäivään — leikkaa myötäpäiväisen kaaren (mitoitus R:llä tai I,K-keskipisteellä).",
+    G03:"Ympyräinterpolointi, vastapäivään — leikkaa vastapäiväisen kaaren (mitoitus R:llä tai I,K-keskipisteellä).",
+    G18:"Valitsee ZX-tason — sorvauksen normaalin tason, joten kaaret kaartuvat Z–X-tasossa.",
+    G20:"Asettaa yksiköt tuumiksi.",
+    G21:"Asettaa yksiköt millimetreiksi (mm).",
+    G28:"Paluu koneen referenssipisteeseen (kotiasemaan).",
+    G40:"Peruuttaa terän nirkkosäteen kompensaation.",
+    G41:"Kytkee terän nirkkosäteen kompensaation päälle (vasen).",
+    G42:"Kytkee terän nirkkosäteen kompensaation päälle (oikea).",
+    G50:"Asettaa karan maksimikierrosluvun (rajoittaa RPM), jotta kara ei ylinopeudu.",
+    G70:"Viimeistelykierto — ajaa P–Q-profiilin kerran viimeistä viimeistelypäästöä varten.",
+    G71:"Ulkosorvauksen rouhintakierto — poistaa materiaalia yhdensuuntaisin päästöin viimeistelyvaraksi.",
+    G72:"Päädyn rouhintakierto — G71:n päädynsuuntainen sisar.",
+    G74:"Nokittava porauskierto (keskiössä) — nokittaa sisään ja vetäytyy puhdistaakseen lastut.",
+    G75:"Uritus-/katkaisukierto — syöttää X:ssä uran pohjaan, nokkien lastut pois.",
+    G76:"Kierrekierto — muodostaa kierteen monessa päästössä (F = nousu).",
+    G96:"Vakio lastuamisnopeus (CSS) — ohjaus säätää RPM:ää halkaisijan muuttuessa pitääkseen lastuamisnopeuden (vc = π·d·n/1000).",
+    G97:"Kiinteä kierroslukumoodi — tasainen karanopeus, käytetään poraukseen, kierteitykseen ja uritukseen.",
+    G98:"Syöttö per minuutti -moodi.",
+    G99:"Syöttö per kierros -moodi (mm/kier) — sorvauksen normaali moodi.",
+    M03:"Kara PÄÄLLE, myötäpäivään (eteenpäin) — ulkosorvauksen normaali suunta.",
+    M04:"Kara PÄÄLLE, vastapäivään (taakse).",
+    M05:"Kara SEIS.",
+    M08:"Jäähdytysneste PÄÄLLE.",
+    M09:"Jäähdytysneste POIS.",
+    M13:"Käyttötyökalu + C-akseli PÄÄLLE (kiilauran jyrsintään).",
+    M30:"Ohjelman loppu + kelaus alkuun — palauttaa ohjelman alkuun."
+  }
+};
+
+const ADDR_EXPLAIN = {
+  en: {
+    O:"Program number — every FANUC/ISO program starts with O followed by four digits (this is O{0}).",
+    N:"Block/sequence number — labels this line so a cycle (G70/G71/G72) can reference it with P and Q.",
+    X:"X{0} — X is a diameter (absolute). Positions/cuts to Ø{0} mm (the tool sits at radius {1} mm).",
+    Xneg:"X{0} — X is a diameter (absolute). A negative value feeds past centre (X0) so the nose radius clears and the face comes out flat with no pip in the middle.",
+    Z:"Z{0} — Z is the axial position (absolute). Moves to Z{0} mm (Z0 = the faced end; negative Z goes into the part).",
+    U:"U{0} — incremental X move, in diameter (adds {0} mm to the current X).",
+    W:"W{0} — incremental Z move (adds {0} mm to the current Z).",
+    C:"C{0} — C-axis angular position (deg), used with live tooling for milling.",
+    F:"F{0} — feed rate {0} mm/rev (under G99). On a G76 thread this is the pitch/lead.",
+    S:"S{0} — spindle speed {0} (rpm under G97, or m/min surface speed under G96).",
+    T:"T{0} — selects tool {1} and applies offset {2} (first two digits = tool slot, last two = wear-offset memory).",
+    I:"I{0} — arc centre offset from the start point along X (radius direction).",
+    K:"K{0} — arc centre offset from the start point along Z (axial direction).",
+    R_arc:"R{0} — arc radius {0} mm (positive R takes the short way, under 180°).",
+    R_g76:"R{0} — G76 finishing allowance / minimum depth of cut.",
+    R_peck:"R{0} — retract amount between pecks (mm).",
+    R_rough:"R{0} — retract amount between roughing passes (mm).",
+    R_generic:"R{0} — radius or cycle retract amount.",
+    P_g76:"P{0} — G76 thread data (packed: finishing passes, pull-out angle, compound infeed).",
+    P_prof:"P{0} — profile start block number (points at N{0}).",
+    P_generic:"P{0} — parameter (block number or cycle data).",
+    Q_g76:"Q{0} — G76 minimum depth per pass.",
+    Q_peck:"Q{0} — peck depth per plunge (mm).",
+    Q_groove:"Q{0} — groove peck depth (mm).",
+    Q_generic:"Q{0} — parameter (peck or pass amount)."
+  },
+  hi: {
+    O:"प्रोग्राम संख्या — हर FANUC/ISO प्रोग्राम O से शुरू होता है जिसके बाद चार अंक होते हैं (यह O{0} है)।",
+    N:"ब्लॉक/अनुक्रम संख्या — इस पंक्ति को लेबल करता है ताकि साइकिल (G70/G71/G72) इसे P और Q से संदर्भित कर सके।",
+    X:"X{0} — X एक डायमीटर (एब्सोल्यूट) है। Ø{0} mm पर स्थिति/कट करता है (टूल त्रिज्या {1} mm पर होता है)।",
+    Xneg:"X{0} — X एक डायमीटर (एब्सोल्यूट) है। ऋणात्मक मान केंद्र (X0) से आगे फ़ीड करता है ताकि नोज़ रेडियस साफ़ हो और फेस बीच में बिना गांठ के सपाट बने।",
+    Z:"Z{0} — Z अक्षीय स्थिति (एब्सोल्यूट) है। Z{0} mm पर जाता है (Z0 = फेस किया हुआ सिरा; ऋणात्मक Z पार्ट के अंदर जाता है)।",
+    U:"U{0} — इंक्रीमेंटल X चाल, डायमीटर में (वर्तमान X में {0} mm जोड़ता है)।",
+    W:"W{0} — इंक्रीमेंटल Z चाल (वर्तमान Z में {0} mm जोड़ता है)।",
+    C:"C{0} — C-अक्ष कोणीय स्थिति (डिग्री), मिलिंग के लिए लाइव टूलिंग के साथ उपयोग होता है।",
+    F:"F{0} — फ़ीड दर {0} mm/rev (G99 में)। G76 थ्रेड पर यह पिच/लीड है।",
+    S:"S{0} — स्पिंडल गति {0} (G97 में rpm, या G96 में m/min सतह गति)।",
+    T:"T{0} — टूल {1} चुनता है और ऑफसेट {2} लागू करता है (पहले दो अंक = टूल स्लॉट, अंतिम दो = वियर-ऑफसेट मेमोरी)।",
+    I:"I{0} — प्रारंभ बिंदु से X दिशा (त्रिज्या) में चाप केंद्र ऑफसेट।",
+    K:"K{0} — प्रारंभ बिंदु से Z दिशा (अक्षीय) में चाप केंद्र ऑफसेट।",
+    R_arc:"R{0} — चाप त्रिज्या {0} mm (धनात्मक R छोटा रास्ता लेता है, 180° से कम)।",
+    R_g76:"R{0} — G76 फिनिशिंग अलाउंस / न्यूनतम कट गहराई।",
+    R_peck:"R{0} — पेक के बीच रिट्रैक्ट मात्रा (mm)।",
+    R_rough:"R{0} — रफिंग पास के बीच रिट्रैक्ट मात्रा (mm)।",
+    R_generic:"R{0} — त्रिज्या या साइकिल रिट्रैक्ट मात्रा।",
+    P_g76:"P{0} — G76 थ्रेड डेटा (पैक्ड: फिनिशिंग पास, पुल-आउट कोण, कंपाउंड इनफीड)।",
+    P_prof:"P{0} — प्रोफ़ाइल प्रारंभ ब्लॉक संख्या (N{0} की ओर इंगित करता है)।",
+    P_generic:"P{0} — पैरामीटर (ब्लॉक संख्या या साइकिल डेटा)।",
+    Q_g76:"Q{0} — G76 प्रति पास न्यूनतम गहराई।",
+    Q_peck:"Q{0} — प्रति डुबकी पेक गहराई (mm)।",
+    Q_groove:"Q{0} — ग्रूव पेक गहराई (mm)।",
+    Q_generic:"Q{0} — पैरामीटर (पेक या पास मात्रा)।"
+  },
+  fi: {
+    O:"Ohjelmanumero — jokainen FANUC/ISO-ohjelma alkaa O-kirjaimella ja neljällä numerolla (tämä on O{0}).",
+    N:"Lohkon/sekvenssin numero — nimeää tämän rivin, jotta kierto (G70/G71/G72) voi viitata siihen P:llä ja Q:lla.",
+    X:"X{0} — X on halkaisija (absoluuttinen). Asemoi/leikkaa Ø{0} mm:iin (työkalu on säteellä {1} mm).",
+    Xneg:"X{0} — X on halkaisija (absoluuttinen). Negatiivinen arvo syöttää keskipisteen (X0) yli, jotta nirkkosäde puhdistuu ja päädystä tulee tasainen ilman nappulaa keskelle.",
+    Z:"Z{0} — Z on aksiaaliasema (absoluuttinen). Siirtyy Z{0} mm:iin (Z0 = sorvattu pääty; negatiivinen Z menee kappaleen sisään).",
+    U:"U{0} — inkrementaalinen X-liike, halkaisijana (lisää {0} mm nykyiseen X:ään).",
+    W:"W{0} — inkrementaalinen Z-liike (lisää {0} mm nykyiseen Z:aan).",
+    C:"C{0} — C-akselin kulma-asema (astetta), käytetään jyrsintään käyttötyökalulla.",
+    F:"F{0} — syöttönopeus {0} mm/kier (G99:ssä). G76-kierteessä tämä on nousu.",
+    S:"S{0} — karan nopeus {0} (G97:ssä rpm, tai G96:ssä m/min lastuamisnopeus).",
+    T:"T{0} — valitsee työkalun {1} ja soveltaa korjauksen {2} (kaksi ensimmäistä numeroa = työkalupaikka, kaksi viimeistä = kulumakorjausmuisti).",
+    I:"I{0} — kaaren keskipisteen siirtymä lähtöpisteestä X-suunnassa (säde).",
+    K:"K{0} — kaaren keskipisteen siirtymä lähtöpisteestä Z-suunnassa (akseli).",
+    R_arc:"R{0} — kaaren säde {0} mm (positiivinen R ottaa lyhyen reitin, alle 180°).",
+    R_g76:"R{0} — G76-viimeistelyvara / minimi lastuamissyvyys.",
+    R_peck:"R{0} — vetäytymismäärä nokkausten välillä (mm).",
+    R_rough:"R{0} — vetäytymismäärä rouhintapäästöjen välillä (mm).",
+    R_generic:"R{0} — säde tai kierron vetäytymismäärä.",
+    P_g76:"P{0} — G76-kierredata (pakattu: viimeistelypäästöt, vetäytymiskulma, yhdistelmäinfeed).",
+    P_prof:"P{0} — profiilin alkulohkon numero (osoittaa N{0}:aan).",
+    P_generic:"P{0} — parametri (lohkon numero tai kiertodata).",
+    Q_g76:"Q{0} — G76:n minimisyvyys päästöä kohden.",
+    Q_peck:"Q{0} — nokkaussyvyys per sukellus (mm).",
+    Q_groove:"Q{0} — uran nokkaussyvyys (mm).",
+    Q_generic:"Q{0} — parametri (nokkaus- tai päästömäärä)."
+  }
+};
+
+function fmt(tpl, ...args){
+  return String(tpl).replace(/\{(\d+)\}/g, (m,i)=> (args[+i] != null ? args[+i] : m));
+}
+
+function explainToken(letter, num, gInLine){
+  const L = ADDR_EXPLAIN[curLang] || ADDR_EXPLAIN.en;
+  if(letter === "G" || letter === "M"){
+    const code = letter + String(Math.round(parseFloat(num)||0)).padStart(2,"0");
+    return (CODE_EXPLAIN[curLang]||CODE_EXPLAIN.en)[code] || CODE_EXPLAIN.en[code] || null;
+  }
+  const g = gInLine;
+  switch(letter){
+    case "O": return fmt(L.O, num);
+    case "N": return fmt(L.N, num);
+    case "X": {
+      const xv = parseFloat(num);
+      return xv < 0 ? fmt(L.Xneg, num) : fmt(L.X, num, (xv/2));
+    }
+    case "Z": return fmt(L.Z, num);
+    case "U": return fmt(L.U, num);
+    case "W": return fmt(L.W, num);
+    case "C": return fmt(L.C, num);
+    case "F": return fmt(L.F, num);
+    case "S": return fmt(L.S, num);
+    case "T": {
+      const t = String(num).padStart(4,"0");
+      return fmt(L.T, num, t.slice(0,2), t.slice(2,4));
+    }
+    case "I": return fmt(L.I, num);
+    case "K": return fmt(L.K, num);
+    case "R": {
+      if(g && (g.has(2) || g.has(3))) return fmt(L.R_arc, num);
+      if(g && g.has(76)) return fmt(L.R_g76, num);
+      if(g && (g.has(74) || g.has(75))) return fmt(L.R_peck, num);
+      if(g && (g.has(71) || g.has(72))) return fmt(L.R_rough, num);
+      return fmt(L.R_generic, num);
+    }
+    case "P": {
+      if(g && g.has(76)) return fmt(L.P_g76, num);
+      if(g && (g.has(70) || g.has(71) || g.has(72))) return fmt(L.P_prof, num);
+      return fmt(L.P_generic, num);
+    }
+    case "Q": {
+      if(g && g.has(76)) return fmt(L.Q_g76, num);
+      if(g && g.has(74)) return fmt(L.Q_peck, num);
+      if(g && g.has(75)) return fmt(L.Q_groove, num);
+      return fmt(L.Q_generic, num);
+    }
+    default: return null;
+  }
+}
+
+function breakdownLine(raw){
+  const cm = raw.match(/\(([^)]*)\)/);
+  const comment = cm ? cm[1].trim() : null;
+  const codePart = raw.replace(/\(.*?\)/g," ").trim();
+  const bits = [];
+  const re = /([A-Z])(-?\d*\.?\d+)/g; let m;
+  while((m = re.exec(codePart))) bits.push({letter:m[1], num:m[2]});
+  const gInLine = new Set(bits.filter(b=>b.letter==="G").map(b=>Math.round(parseFloat(b.num)||0)));
+
+  let header;
+  if(comment){
+    const idx = raw.indexOf("(");
+    header = escapeHtml(raw.slice(0, idx)) + '<span class="cmt">' + escapeHtml(raw.slice(idx)) + '</span>';
+  } else {
+    header = escapeHtml(raw);
+  }
+
+  const items = [];
+  for(const b of bits){
+    const ex = explainToken(b.letter, b.num, gInLine);
+    if(ex) items.push(`<li><b>${escapeHtml(b.letter + b.num)}</b> ${ex}</li>`);
+  }
+  const isProgram = bits.some(b => b.letter === "O");
+  if(isProgram && comment){
+    items.push(`<li><b>${escapeHtml(T("commentWord"))}</b> ${escapeHtml(comment)} — ${escapeHtml(T("detailComment"))}</li>`);
+  }
+
+  return `<div class="dl-block"><div class="dl-line">${header}</div><ul class="dl-bits">${items.join("")}</ul></div>`;
+}
+
+function buildDetail(){
+  const lv = LV;
+  let h = `<h3>${T("detailJob")}</h3>`;
+  h += `<p><b>${escapeHtml(lv.title)}</b> — ${fmt(T("detailJobText"), lv.stock.diameter, lv.stock.length, escapeHtml(lv.stock.material), lv.tolerance)}</p>`;
+  h += `<h3>${T("detailBreakdown")}</h3>`;
+  lv.model.split("\n").forEach(line=>{ if(line.trim()) h += breakdownLine(line); });
+  return h;
+}
+
+function openDetail(){
+  const lv = LV;
+  document.getElementById("detail-sub").textContent = `${T("levelWord")} ${lv.id} · ${lv.title} · ${T("tol")} ±${lv.tolerance} mm — ${T("detailSub")}`;
+  document.getElementById("detail-content").innerHTML = buildDetail();
+  document.getElementById("detail-content").scrollTop = 0;
+  document.getElementById("detail-overlay").classList.add("show");
+}
+document.getElementById("btn-detail").addEventListener("click", openDetail);
+document.getElementById("close-detail").addEventListener("click", ()=>document.getElementById("detail-overlay").classList.remove("show"));
+document.getElementById("detail-overlay").addEventListener("click", e=>{ if(e.target.id==="detail-overlay") document.getElementById("detail-overlay").classList.remove("show"); });
+
+/* ============================================================
    11. ASK-COACH  (offline, level-aware Q&A assistant)
    ============================================================ */
 const KB = [
@@ -3304,6 +3752,146 @@ const KB = [
   { k:["groove","grooving"], a:"Grooving plunges a narrow tool straight in (X) to the groove diameter — cycle <code>G75</code>." },
   { k:["keyslot","key slot","slot","milling","mill"], a:"A keyslot needs the live tool + C-axis (<code>M13</code>): stop the main spindle, index <code>C0</code>, plunge in X, then feed along Z." }
 ];
+
+/* ---- per-level operation knowledge (coach answers about any level 1–14) ---- */
+(function(){
+  const OPS = {
+    1:  { ops:"Facing + OD turning", what:"Face the end at Z0, then turn a single Ø40 diameter over 30 mm.", codes:"G00/G01 (face + turn), T0101, G96" },
+    2:  { ops:"Facing + stepped OD turning", what:"Face, then turn Ø50 over 15 mm and Ø40 over 20 mm — two 90° shoulders.", codes:"G00/G01 turning passes, two shoulders" },
+    3:  { ops:"Facing + turning + 45° chamfer", what:"Face, turn the Ø30 body, then cut a C2 (2 mm) 45° chamfer on the nose in one combined X+Z move.", codes:"G01 X30 Z-2 (chamfer)" },
+    4:  { ops:"Facing + taper turning", what:"Face, then cut a cone from Ø30 up to Ø50 over 40 mm in a single diagonal move.", codes:"G01 X50 Z-40 (taper)" },
+    5:  { ops:"Facing + turning + OD grooving", what:"Turn Ø40, then index to a 4 mm groove tool and plunge a Ø30 groove at Z-15.", codes:"T0404 · G97 · G75 X30 Z-15" },
+    6:  { ops:"Facing + centre drilling", what:"Face, then index to a Ø20 drill on centre (X0) and peck-drill 40 mm deep.", codes:"T0202 · G97 · G74 Z-40 Q5000" },
+    7:  { ops:"Facing + drilling + boring", what:"Face, drill Ø20, then bore out to Ø30 over 30 mm with a boring bar.", codes:"T0202 drill · T0303 bore · G01 Z-30" },
+    8:  { ops:"Facing + turning + OD threading", what:"Face, turn the Ø24 major, then cut an M24×2 thread.", codes:"T0505 · G97 · G76 X21.4 Z-25 F2.0" },
+    9:  { ops:"Facing + drilling + ID threading", what:"Face, drill the Ø22.5 tap hole, then cut an M24×1.5 internal thread.", codes:"T0202 drill · T0606 · G76 X24 Z-25 F1.5" },
+    10: { ops:"OD turning + live-tool milling", what:"Clean the Ø40 OD, stop the main spindle, then mill a 20 mm keyslot 5 mm deep with the live tool + C-axis.", codes:"T0707 · M05 · M13 · G00 C0 · G01 X30 Z-30" },
+    11: { ops:"Arc turning (ball nose)", what:"Approach the Ø40 nose, then sweep an R100 dome out to Ø220 with a CCW arc defined by I,K.", codes:"G03 X220 Z-56.4 I0 K-100" },
+    12: { ops:"Canned-cycle roughing + finishing", what:"Rough a cone + Ø24 + R5 fillet profile with G71, then finish with G70.", codes:"G71 P10 Q20 · N10–N20 profile · G70 P10 Q20" },
+    13: { ops:"Facing-cycle roughing + finishing", what:"Rough a tapered flange (Ø80→Ø120→R5→Ø150) across the face with G72, then finish with G70.", codes:"G72 P30 Q40 · N30–N40 profile · G70 P30 Q40" },
+    14: { ops:"Arc-chain turning (wavy beads)", what:"Rough a Ø10 profile with G71, then cut four alternating R5 arcs (G03/G02) and finish with G70.", codes:"G71/G70 · G03 R5 · G02 R5 alternating" }
+  };
+  const NUM = {1:"one",2:"two",3:"three",4:"four",5:"five",6:"six",7:"seven",8:"eight",9:"nine",10:"ten",11:"eleven",12:"twelve",13:"thirteen",14:"fourteen"};
+  LEVELS.forEach(lv=>{
+    const L = OPS[lv.id];
+    if(!L) return;
+    const feats=[];
+    if(lv.target.bore) feats.push("internal bore Ø"+Math.max(...lv.target.bore.map(p=>p.dia)));
+    if(lv.target.threads) feats.push(lv.target.threads.map(t=>(t.side==="ID"?"ID":"OD")+" thread M"+((t.majorDia||t.minorDia+2))+"×"+t.pitch).join(", "));
+    if(lv.target.slots) feats.push("keyslot "+lv.target.slots.map(s=>Math.abs(s.z1-s.z0)+"×"+s.depth+" mm").join(", "));
+    const keys = ["level "+lv.id, "level"+lv.id, "level "+NUM[lv.id], "task "+lv.id, "task"+lv.id];
+    const a = `<b>Level ${lv.id} — ${lv.title}.</b><br>`+
+      `• Stock: Ø${lv.stock.diameter} × ${lv.stock.length} mm ${lv.stock.material}, tolerance ±${lv.tolerance} mm${feats.length?(" · "+feats.join(" · ")):""}.<br>`+
+      `• <b>Operations:</b> ${L.ops}.<br>`+
+      `• <b>What happens:</b> ${L.what}.<br>`+
+      `• <b>Key G-code:</b> <code>${L.codes}</code>.<br>`+
+      `• <b>Plan:</b> • ${lv.steps.join("<br>• ")}`;
+    KB.push({ k:keys, a });
+  });
+  KB.push({
+    k:["which level","what level","level has","level covers","all levels","level list","levels in the game","list of levels","what are the levels","what levels"],
+    a:"The game has 14 levels:<br>• <b>1</b> Face &amp; Turn Ø40 · <b>2</b> Stepped shaft · <b>3</b> Chamfer C2 · <b>4</b> Taper · <b>5</b> OD groove (G75) · <b>6</b> Drill (G74) · <b>7</b> Bore · <b>8</b> OD thread (G76) · <b>9</b> ID thread · <b>10</b> Keyslot (live tool) · <b>11</b> Ball nose R100 (G03 I,K) · <b>12</b> G71/G70 cone + R5 · <b>13</b> G72 flange · <b>14</b> Wavy beads (G02/G03 chain).<br>Ask “what happens in level 5?” for the full detail."
+  });
+})();
+
+/* ============================================================
+   Sandvik Coromant · Metal Cutting Technology knowledge
+   (added so the coach answers machining questions in depth)
+   ============================================================ */
+(function(){
+  const add = (k, a) => KB.push({ k, a });
+
+  // ---- the cutting process ----
+  add(["chip formation","how chips form","chip type","chip types","chip shape","continuous chip","segmented chip","discontinuous chip","what is a chip"],
+    "The tool edge shears a thin layer off the workpiece — that layer is the <b>chip</b>. Chip types depend on material and speed:<br>• <b>Continuous</b> — ductile metals (steel, aluminium) at higher speed; best finish.<br>• <b>Segmented / serrated</b> — titanium, stainless, HRSA; wavy saw-tooth chip.<br>• <b>Discontinuous</b> — brittle metals (cast iron); short crumbly chips.<br>A <b>chip breaker</b> on the insert curls and snaps the chip so it clears the cut instead of tangling.");
+  add(["cutting speed","vc","cutting speed formula","calculate rpm","rpm formula","spindle speed formula","surface speed formula","n vc 1000"],
+    "<b>Cutting speed vc</b> (m/min) is how fast the workpiece surface passes the tool edge. Convert it to spindle speed:<br><code>n (rpm) = vc × 1000 / (π × D)</code><br>and back:<br><code>vc = π × D × n / 1000</code><br>D = the diameter being cut, in mm. On a lathe the diameter changes as you cut, so <code>G96</code> (constant surface speed) holds vc steady by varying rpm.");
+  add(["feed","fn","feed rate","depth of cut","ap","cutting depth","doc","metal removal rate","cutting data"],
+    "The three cutting data are:<br>• <b>vc</b> — cutting speed (m/min).<br>• <b>fn</b> — feed (mm/rev), the tool advance per revolution.<br>• <b>ap</b> — depth of cut (mm), measured on the radius.<br><b>Metal removal rate Q = vc × ap × fn</b>. Rough with big ap/fn for speed; finish with small ap/fn for accuracy and surface quality.");
+  add(["cutting force","power","horsepower","specific cutting force","kc","cutting power","torque"],
+    "Cutting requires <b>force</b> to shear the chip and <b>power</b> to keep the spindle turning. <b>Specific cutting force kc</b> (N/mm²) is the force per unit chip area — it rises as the material gets tougher and as the chip gets thinner (small feed ⇒ higher kc). Power ≈ cutting force × cutting speed. Bigger depth and feed mean more force and more power.");
+  add(["heat","temperature","cutting heat","thermal","heat generation","cutting temperature"],
+    "Nearly all cutting energy becomes <b>heat</b>, split between the chip, the tool and the workpiece (the chip carries most away). Excess heat at the edge causes crater wear and plastic deformation and shortens tool life — manage it with the right speed, coolant and a coated grade.");
+  add(["tool life","taylor","tool life equation","wear life","taylor equation"],
+    "<b>Tool life</b> is the cutting time an edge lasts before it must be changed. It drops sharply as cutting speed rises — Taylor's equation describes this: <code>vc · T^m = C</code> (T = tool life, m and C are constants for the material/tool). Practical rule: a 20% speed increase can halve tool life, so don't over-speed.");
+
+  // ---- tool wear ----
+  add(["tool wear","flank wear","crater wear","notch wear","built up edge","bue","chipping","thermal crack","plastic deformation","wear pattern","worn insert"],
+    "Read the worn edge to find the cause:<br>• <b>Flank wear</b> (edge rubs down) — normal abrasion; if too fast, lower vc or use a harder/wear-resistant grade.<br>• <b>Crater wear</b> (dish on the top face) — heat/diffusion; coated grade or lower vc.<br>• <b>Built-up edge (BUE)</b> (metal welds to the tip) — speed too <b>low</b> or sticky material; raise vc, sharper geometry, coolant.<br>• <b>Notch wear</b> (damage at the depth-of-cut line) — work hardening; vary ap, tougher grade.<br>• <b>Plastic deformation</b> (edge bulges) — too hot/loaded; harder grade, coolant, less vc/fn.<br>• <b>Thermal cracks</b> (combs across the edge) — interrupted cuts; tougher grade, steady coolant.<br>• <b>Chipping/fracture</b> — shock; tougher grade, stronger edge prep, check rigidity.");
+
+  // ---- tool materials ----
+  add(["carbide","grade","cemented carbide","coating","cvd","pvd","grade selection","insert grade","carbide grade"],
+    "<b>Cemented carbide</b> (tungsten carbide + cobalt binder) is the workhorse tool material. The <b>grade</b> balances <b>hardness/wear-resistance</b> vs <b>toughness</b>: a hard grade wears slowly but chips easily; a tough grade resists impact but wears faster. <b>Coatings</b> boost the surface:<br>• <b>CVD</b> (chemical vapour deposition) — thick, heat-resistant layers, ideal for steel and cast iron.<br>• <b>PVD</b> (physical vapour deposition) — thin, sharp, tough layers, ideal for stainless, HRSA and sharp edges.<br>Pick the grade by material group (P/M/K/N/S/H) and roughing vs finishing.");
+  add(["cermet","ceramic","cbn","pcd","diamond","tool material","cutting material"],
+    "Beyond carbide:<br>• <b>Cermet</b> — carbide+ceramic; hard and wear-resistant, great for light finishing cuts and fine surfaces.<br>• <b>Ceramic</b> — very hard and heat-resistant; high-speed turning of cast iron and HRSA, but brittle.<br>• <b>CBN</b> (cubic boron nitride) — second only to diamond in hardness; for <b>hard turning</b> of hardened steel (45–65 HRC).<br>• <b>PCD</b> (polycrystalline diamond) — for <b>aluminium</b> and non-ferrous metals at very high speed; never on steel (carbon reacts with diamond).");
+
+  // ---- insert geometry ----
+  add(["insert shape","insert geometry","rhombic","triangle insert","c shape","d shape","s shape","t shape","w shape","r shape","round insert","square insert","insert nose angle"],
+    "Insert shape sets the corner (nose) angle and strength vs access:<br>• <b>T</b> (triangle, 60°) — versatile, 3 edges.<br>• <b>C</b> (rhombic 80°) — strong, good for roughing.<br>• <b>D</b> (55°) — profiling/contours.<br>• <b>S</b> (square, 90°) — strong but less versatile.<br>• <b>W</b> (trigon 80°) — 6 edges, economical.<br>• <b>V</b> (35°) — sharp for fine profiling.<br>• <b>R</b> (round) — toughest, for roughing and profiling.<br>Bigger corner angle = stronger edge; smaller = more access for profiling.");
+  add(["insert code","iso insert","insert designation","cnmg","iso code","insert naming","insert name"],
+    "An ISO insert code like <code>CNMG 12 04 08</code> reads:<br>• <b>C</b> — shape (80° rhombic).<br>• <b>N</b> — clearance angle (N = 0°, negative insert; C/P = positive).<br>• <b>M</b> — tolerance class.<br>• <b>G</b> — fixing / chipbreaker type.<br>• <b>12</b> — cutting-edge length · <b>04</b> — thickness · <b>08</b> — nose radius (0.8 mm).");
+  add(["chip breaker","chipbreaker","chip control","chip breaking"],
+    "The <b>chip breaker</b> is the formed groove on the insert face that curls and snaps the chip. Each geometry has a <b>working window</b> of feed and depth where chips break nicely. If chips come off long and stringy, raise feed or depth, or choose a tighter chip breaker. Short, controlled chips = safe operation and better finish.");
+  add(["nose radius","corner radius","re","insert radius","nose radius selection"],
+    "The <b>nose radius rε</b> is the rounding at the insert corner:<br>• <b>Large rε</b> — strong edge, allows heavy feeds and gives a smoother finish, but pushes the part sideways more (watch thin parts / vibration).<br>• <b>Small rε</b> — gentle radial force, good for slender parts, but weaker tip.<br>Rule of thumb: keep depth of cut ≥ the nose radius where possible — cutting shallower than rε pushes forces radially and invites chatter.");
+  add(["entering angle","lead angle","approach angle","kr","kapr","psir","principal cutting edge angle"],
+    "The <b>entering angle KAPR (κr)</b> is the angle between the cutting edge and the feed direction; its complement is the <b>lead angle PSIR</b>:<br>• <b>KAPR 90°/95°</b> — force points almost straight back (minimal sideways bending), needed to turn square up to a <b>shoulder</b>.<br>• <b>KAPR 45°–75°</b> — spreads the cut over a longer edge (thinner chip, longer life, more force into the chuck), but can't make a square shoulder.");
+  add(["negative insert","positive insert","rake angle","positive rake","negative rake","insert clearance"],
+    "<b>Negative</b> inserts (clearance angle 0°, e.g. CNMG) sit flat in the holder so both sides cut — double the edges, tough, need more power. Best for heavy OD turning.<br><b>Positive</b> inserts (e.g. CCMT, with a clearance angle) cut with lower forces and a keener edge — better for internal work, slender parts and light finishing.<br>General rule: negative for strength/roughing, positive for low force/finishing and internal operations.");
+  add(["tool holder","clamping","insert clamp","shank","toolholder","holder code","insert screw"],
+    "The <b>tool holder</b> clamps the insert and mounts to the turret. Common clamping: <b>screw</b> (positive inserts), <b>clamp</b> (negative inserts), and <b>lever/pin</b>. A rigid holder with minimal overhang is key — the more the tool sticks out, the more it flexes and chatters. Keep overhang as short as the job allows.");
+
+  // ---- material groups / machinability ----
+  add(["material group","iso group","machinability","p m k n s h","material classification","workpiece material","iso material"],
+    "Sandvik/ISO classify workpiece materials into six groups, each with a colour and letter:<br>• <span style='background:#2b6cb0;color:#fff;padding:0 5px'>P</span> <b>Steel</b> — long-chipping, the biggest group.<br>• <span style='background:#d6a417;color:#fff;padding:0 5px'>M</span> <b>Stainless</b> — gummy, work-hardening.<br>• <span style='background:#cf4237;color:#fff;padding:0 5px'>K</span> <b>Cast iron</b> — short crumbly chips, abrasive.<br>• <span style='background:#2f9e5b;color:#fff;padding:0 5px'>N</span> <b>Non-ferrous</b> — aluminium, brass, copper.<br>• <span style='background:#c8792a;color:#fff;padding:0 5px'>S</span> <b>Superalloys &amp; titanium</b> — HRSA, sticky, abrasive.<br>• <span style='background:#7d8b92;color:#fff;padding:0 5px'>H</span> <b>Hardened steel</b> — 45–65 HRC, cut with CBN/ceramic.<br>Always pick cutting data per group — the same speed that suits aluminium burns an edge in titanium.");
+  add(["stainless","austenitic","stainless steel","work hardening","machining stainless","stainless grade"],
+    "<b>Stainless steel</b> (group M) is gummy and <b>work-hardens</b> — the surface gets harder as you cut, so don't rub or dwell. Use a sharp positive edge, a tough PVD-coated grade, firm feed (to cut under the hardened skin), plenty of coolant, and keep the tool engaged. Austenitic grades (304, 316) are the hardest to machine; avoid letting the tool dwell or spring back.");
+  add(["aluminium","aluminum","non ferrous","machining aluminium","silicon aluminium","aluminium grade"],
+    "<b>Aluminium</b> (group N) is soft and free-cutting, so you can run very high speeds with sharp, polished (often PCD or uncoated carbide) edges to prevent built-up edge. Use generous coolant or air blast, and a positive rake for a clean cut. <b>Silicon-alloyed</b> aluminium (e.g. AlSi) is more abrasive — use PCD or coated carbide for long life.");
+  add(["cast iron","grey iron","machining cast iron","ductile iron","cast iron grade"],
+    "<b>Cast iron</b> (group K) gives short, crumbly chips and is <b>abrasive</b>, so it wears edges by abrasion rather than heat. Use a tough, wear-resistant (often CVD-coated) grade, moderate speed, and expect dusty chips. Dry cutting is common. Grey iron machines freely; ductile/nodular iron is tougher and harder on edges.");
+  add(["superalloy","titanium","nickel alloy","hrsa","inconel","heat resistant","superalloy machining"],
+    "<b>Superalloys &amp; titanium</b> (group S, also called HRSA) are heat-resistant, sticky and abrasive, and they hold heat at the cutting zone. Machine them at <b>low speed</b> with sharp positive edges, high-pressure coolant, rigid setup and firm feed. They wear tools fast — expect shorter tool life than steel and never let the tool rub.");
+  add(["hard turning","hardened steel","hrc","hard machining","hard turning steel"],
+    "<b>Hard turning</b> cuts hardened steel (typically 45–65 HRC) instead of grinding. Use <b>CBN</b> (or ceramic) inserts, light depth of cut, rigid setup, and — critically — keep the tool constantly engaged (no interrupted cuts). Hard turning gives fine finishes and tight tolerances but needs a very stiff machine and tool.");
+
+  // ---- fluids / vibration / finish ----
+  add(["cutting fluid","coolant type","which coolant","emulsion","lubrication","flood coolant","coolant selection","mist coolant","cutting oil"],
+    "<b>Cutting fluid</b> cools and lubricates the cut:<br>• <b>Emulsion</b> (oil + water) — general cooling and lubrication; the standard choice.<br>• <b>Neat oil</b> — best lubrication, used for threading, grooving and difficult materials.<br>• <b>High-pressure / through-tool</b> — breaks chips and cools the edge, ideal for drilling and HRSA.<br>Use coolant to carry away heat, flush chips and stop built-up edge. Consistent application also prevents thermal cracking in interrupted cuts.");
+  add(["chatter","vibration","oscillation","noise","squeal","machining vibration"],
+    "<b>Chatter</b> is self-excited vibration between tool and workpiece — you hear it as a squeal and see a wavy surface. Fixes:<br>• Shorten tool overhang; clamp everything rigid.<br>• Support long/thin parts (tailstock, steady rest).<br>• Lower cutting speed or adjust feed/depth.<br>• Use a smaller nose radius or sharper positive geometry.<br>• Keep depth of cut above the nose radius.<br>• Check for worn insert or loose holder.");
+  add(["surface finish","roughness","ra","rz","surface quality","feed marks","surface finish formula"],
+    "A turned surface is a fine spiral groove left by the tool tip. The theoretical roughness (peak-to-valley) is:<br><code>Rz ≈ fn² / (8 × rε)</code> (fn and rε in mm).<br>So <b>halving the feed cuts roughness to a quarter</b>, and a bigger nose radius smooths it further. For a fine finish: light feed + generous nose radius (or a wiper insert), and a stable (chatter-free) setup.");
+  add(["burr","poor finish","bad surface","rough surface","finish problems","burr formation"],
+    "Poor finish or burrs usually come from: wrong feed (too high), a dull/worn insert, built-up edge (speed too low), chatter, or too-small nose radius. Check the insert edge first, then raise speed / lower feed, use coolant, and make sure the setup is rigid. A burr at the edge of the cut is reduced with a sharp edge, correct entering angle, and a chamfer or wiper pass.");
+  add(["speeds and feeds","choose speed","recommend speed","feed selection","cutting speed selection","starting speed"],
+    "To choose cutting data:<br>1. Find the <b>material group</b> (P/M/K/N/S/H).<br>2. Pick the <b>vc</b> the grade/coating allows for that group.<br>3. Choose <b>ap</b> and <b>fn</b> for the operation (rough vs finish).<br>4. Convert vc to rpm with <code>n = vc×1000/(π×D)</code>.<br>Typical starting vc: steel ~150–300, stainless ~80–180, cast iron ~120–250, aluminium ~300–900, titanium/HRSA ~30–80 m/min. Start conservative and watch the chips and edge.");
+
+  // ---- operations (deeper) ----
+  add(["roughing","finishing","rough","finish pass","stock allowance","rough vs finish"],
+    "<b>Roughing</b> removes most of the stock fast: big depth of cut, heavy feed, tough grade, lower finish requirements. <b>Finishing</b> takes a light final pass (small ap, fine feed) for size, tolerance and surface. Leave a small <b>finish allowance</b> (e.g. 0.2–0.5 mm) after roughing so the finish pass can clean up deflection and heat effects.");
+  add(["workholding","chuck","collet","centre","steady rest","clamping","tailstock","work holding"],
+    "Good <b>workholding</b> keeps the part rigid and on-centre:<br>• <b>3-jaw chuck</b> — quick, self-centring, for round stock.<br>• <b>Collet</b> — higher accuracy and grip for finished bars.<br>• <b>Tailstock centre</b> — supports long shafts from the end.<br>• <b>Steady rest</b> — supports long/thin parts mid-length.<br>Rigidity fights vibration and lets you cut harder; support any part sticking out more than ~3× its diameter.");
+  add(["twist drill","drill geometry","peck drilling","hole making","drill point","drill selection"],
+    "A <b>drill</b> makes a hole on centre (X0 on a lathe). Key points:<br>• Use fixed rpm (<code>G97</code>) — surface speed is meaningless at the centre.<br>• <b>Peck</b> (G74) once deeper than ~3× the drill diameter so chips clear and the flutes don't pack.<br>• Use coolant (preferably through-tool) for deep holes.<br>• Keep the drill sharp and on-centre; a dull or offset drill wanders and oversizes the hole.");
+  add(["boring bar","internal turning","boring bar selection","boring operation"],
+    "<b>Boring</b> enlarges an existing hole from the inside. The <b>boring bar</b> must be stiff — use the largest diameter and shortest overhang that fits in the hole. Enter at a diameter smaller than the hole, feed along Z, then back off before retracting. Inside a bore, X is still a diameter: a bigger X = a bigger hole.");
+  add(["thread form","pitch","metric thread","thread profile","threading insert","thread infeed","thread flank"],
+    "A <b>thread</b> is cut in many light passes, never one. The <b>pitch</b> (the F word in G76) locks feed to the spindle. Infeed options:<br>• <b>Radial (straight in)</b> — simple but loads both flanks and can give poor chip flow.<br>• <b>Flank (angled) infeed</b> — cuts on one side, better chips and finish, especially for coarse threads.<br>• <b>Full-profile</b> inserts cut the crest too (exact form, one pitch each); <b>V-profile</b> inserts are cheaper and cover a pitch range.");
+  add(["parting","cutoff","part off","grooving insert","groove width","parting tool"],
+    "<b>Parting/cut-off</b> uses a narrow blade that plunges to centre to cut the part free — a demanding cut because the blade is thin and buried. Keep it <b>rigid</b>, exactly on centre height, use a generous coolant flow, and under <code>G96</code> let the speed drop near the middle so it doesn't over-speed at small diameters. <b>Grooving</b> is the same plunge, but stops at a diameter to leave a groove; the tool width sets the groove width.");
+  add(["end mill","milling cutter","face mill","milling parameters","climb milling","milling operation","live tool milling"],
+    "Milling uses a rotating cutter to remove material. On a lathe it needs <b>live tooling</b> + a locked C-axis (M13). Key ideas:<br>• <b>Climb (down) milling</b> gives better finish and tool life when the machine is rigid.<br>• Feed is usually per-tooth (mm/tooth), so total feed = teeth × feed/tooth × rpm.<br>• Keep the cutter engaged and use coolant; interrupted cuts are tough on edges.<br>• Depth/width of cut, speed and feed all trade off for finish and tool life.");
+  add(["safety","ppe","safety glasses","machine safety","safe operation","machining safety"],
+    "Workshop safety basics:<br>• Wear <b>safety glasses</b> — chips fly fast.<br>• No loose clothing, long hair tied back, no gloves near rotating parts.<br>• Never reach into a running machine; keep guards in place.<br>• Clamp the part and tool firmly; remove the chuck key before starting.<br>• Watch long chips — they are razor-sharp; stop the machine and clear them with a hook, not your hands.");
+  add(["wiper","wiper insert","wiper geometry","wiper edge"],
+    "A <b>wiper insert</b> has a special blended nose (a wiper edge) that irons the surface flat. It keeps a fine finish even at <b>double the feed</b> of a conventional insert — so you cut faster without losing surface quality. Use wipers to shorten cycle time on finishing passes; best effect with the wiper edge parallel to the machined surface and a stable setup.");
+  add(["machining economy","cost","productivity","cost per part","machining cost","cycle time"],
+    "<b>Machining economy</b> balances tool cost against cycle time. Total cost per part = machine rate × time + tool cost per part. A faster speed or feed shortens cycle time but wears tools sooner — the optimum is usually <b>not</b> maximum speed. Reduce non-cutting time (tool changes, rapid moves), use productive grades/geometries, and remember: a cheap insert that lasts half as long can still cost more than a premium grade.");
+  add(["chip thickness","chip load","hm","chip cross section","chip area","hex"],
+    "The <b>chip thickness hm</b> is how thick the sheared layer actually is — roughly <code>hm = fn × sin(KAPR)</code>. It matters because a chip that is too thin (from a small feed or a small entering angle) means the edge rubs instead of cuts, raising specific cutting force and heat. A good rule: keep the chip thicker than the edge's honing/rounding so it cuts cleanly.");
+})();
+
 const CHAT_QUICK = ["Hint for this level","What is G96?","Speeds & feeds for steel?","Which insert for aluminium?","How do I stop chatter?","What's my tolerance?"];
 let chatSeeded=false;
 
@@ -3358,6 +3946,7 @@ function coachSystemPrompt(){
     `On a lathe X is a DIAMETER, Z is axial (Z0 = faced end, negative into the part), U/W are incremental. `+
     `Context: the student is on Level ${LV.id} "${LV.title}", made from Ø${LV.stock.diameter}×${LV.stock.length} mm ${LV.stock.material}`+
     `${feats.length?" with "+feats.join(" and "):""}, tolerance ±${LV.tolerance} mm — relate answers to this when it helps, but freely answer general lathe questions too. `+
+    `The game's 14 levels are: 1 Face & turn to Ø40, 2 Stepped shaft Ø60-Ø50-Ø40, 3 Chamfered nose C2, 4 Taper Ø30→Ø50, 5 OD groove Ø30, 6 Drill Ø20×40 deep, 7 Bore Ø30, 8 OD thread M24×2, 9 ID thread M24×1.5, 10 Keyslot on OD (live tool), 11 Ball nose R100 (G03 I,K), 12 G71/G70 cone + R5 fillet, 13 G72 facing cycle flange, 14 Wavy beads (G02/G03 chain). Answer questions about any of them from this list. `+
     `Keep answers concise (a few sentences or a short list). Use code or examples in backticks where useful. Encouraging, plain language. Only if a question is clearly nothing to do with lathes, machining or workshops, gently steer back.`;
 }
 async function chatAsk(q){
